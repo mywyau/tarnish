@@ -1,66 +1,3 @@
-# { pkgs ? import <nixpkgs> {} }:
-
-# pkgs.mkShell {
-#   name = "rust-backend-env";
-
-#   buildInputs = [
-#     pkgs.rustup
-#     pkgs.libiconv
-
-#     # Diesel CLI with PostgreSQL support
-#     pkgs.diesel-cli
-
-#     # Additional utilities
-#     pkgs.openssl
-#     pkgs.pkg-config
-#     pkgs.postgresql
-#   ];
-
-#   shellHook = ''
-#     rustup toolchain install stable
-#     rustup default stable
-#     echo "Rust version: $(rustc --version)"
-#     echo "Environment setup complete. Ready to develop!"
-#   '';
-# }
-
-# { pkgs ? import <nixpkgs> {} }:
-
-# pkgs.mkShell {
-#   name = "rust-backend-env";
-
-#   buildInputs = [
-#     pkgs.rustup
-#     pkgs.openssl
-#     pkgs.pkg-config
-#     pkgs.postgresql
-#     pkgs.diesel-cli
-#     pkgs.libiconv
-#   ];
-
-#   shellHook = ''
-#      export PGDATA="$HOME/pgsql"
-#         export PGPORT="5432"
-
-#         if [ ! -d "$PGDATA" ]; then
-#           mkdir -p "$PGDATA"
-#           initdb -D "$PGDATA"
-#         fi
-
-#         echo "Starting PostgreSQL..."
-#         pg_ctl -D "$PGDATA" -l logfile start
-#         echo "PostgreSQL started at port $PGPORT"
-
-#     export DATABASE_URL="postgres://myuser:mypassword@localhost:5432/mydatabase"
-#     rustup toolchain install stable
-#     rustup default stable
-#     export LDFLAGS="-L${pkgs.libiconv}/lib"
-#     export CPPFLAGS="-I${pkgs.libiconv}/include"
-#     echo "Environment setup complete. Ready to develop!"
-#   '';
-# }
-
-
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
@@ -73,6 +10,7 @@ pkgs.mkShell {
     pkgs.postgresql
     pkgs.diesel-cli
     pkgs.libiconv
+    pkgs.httpie
   ];
 
   shellHook = ''
