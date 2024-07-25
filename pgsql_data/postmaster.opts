@@ -1,0 +1,1 @@
+/nix/store/v0r2wr868mll94bmpcp2qlfs1n6hvx9r-postgresql-15.6/bin/postgres "-D" "/Users/michaelyau/my-project/tarnish/pgsql_data"
