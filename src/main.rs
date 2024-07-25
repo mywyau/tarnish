@@ -5,14 +5,13 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
+
+// Import schema
 use crate::models::{NewPost, Post};
 use crate::schema::posts;
 
 mod schema; // Declare the schema module
 mod models; // Declare the models module
-
-// Import models
-// pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 // Import models
 
@@ -43,9 +42,12 @@ async fn create_post(
 
     let conn = pool.get().expect("Couldn't get db connection from pool");
 
+    // Convert to mutable reference
+    let mut conn = conn;
+
     match diesel::insert_into(posts::table)
         .values(&new_post)
-        .get_result::<Post>(&*conn) // Use the connection directly
+        .get_result::<Post>(&mut conn) // Use mutable reference
     {
         Ok(post) => Ok(HttpResponse::Created().json(post)),
         Err(e) => {
@@ -63,7 +65,10 @@ async fn get_post(
     let id = path.into_inner();
     let conn = pool.get().expect("Couldn't get db connection from pool");
 
-    match posts::table.find(id).first::<Post>(&*conn) {
+    // Convert to mutable reference
+    let mut conn = conn;
+
+    match posts::table.find(id).first::<Post>(&mut conn) { // Use mutable reference
         Ok(post) => Ok(HttpResponse::Ok().json(post)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
@@ -77,17 +82,24 @@ async fn update_post(
 ) -> Result<HttpResponse, Error> {
     let id = path.into_inner();
     let post_input = post.into_inner();
+
     let conn = pool.get().expect("Couldn't get db connection from pool");
+
+    // Convert to mutable reference
+    let mut conn = conn;
 
     match diesel::update(posts::table.find(id))
         .set((
             posts::title.eq(post_input.title),
             posts::body.eq(post_input.body)
         ))
-        .execute(&*conn) // Use the connection directly
+        .execute(&mut conn) // Use mutable reference
     {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+        Err(e) => {
+            eprintln!("Error updating post: {:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
+        }
     }
 }
 
@@ -99,9 +111,15 @@ async fn delete_post(
     let id = path.into_inner();
     let conn = pool.get().expect("Couldn't get db connection from pool");
 
-    match diesel::delete(posts::table.find(id)).execute(&*conn) {
+    // Convert to mutable reference
+    let mut conn = conn;
+
+    match diesel::delete(posts::table.find(id)).execute(&mut conn) { // Use mutable reference
         Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
+        Err(e) => {
+            eprintln!("Error deleting post: {:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
+        }
     }
 }
 

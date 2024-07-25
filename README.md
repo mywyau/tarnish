@@ -52,3 +52,6 @@ pg_ctl -D /var/lib/postgresql/data status
 
 psql -U myuser -d mydatabase -h localhost -p 5432
 
+
+pg_isready
+

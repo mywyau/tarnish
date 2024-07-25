@@ -527,3 +527,208 @@
 2024-07-25 16:14:28.808 BST [261] FATAL:  role "myuser" does not exist
 2024-07-25 16:15:03.399 BST [865] FATAL:  role "myuser" does not exist
 2024-07-25 16:21:01.472 BST [4298] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.476 BST [16836] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.476 BST [16838] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.476 BST [16837] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.483 BST [16839] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.483 BST [16840] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.484 BST [16841] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.505 BST [16842] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.505 BST [16843] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.505 BST [16844] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.511 BST [16845] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.889 BST [16847] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.889 BST [16849] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.889 BST [16848] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.904 BST [16850] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.905 BST [16851] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.905 BST [16852] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.911 BST [16853] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.911 BST [16854] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.911 BST [16855] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:31.916 BST [16856] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.699 BST [16857] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.699 BST [16859] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.699 BST [16858] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.713 BST [16860] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.713 BST [16861] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.714 BST [16862] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.719 BST [16863] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.719 BST [16865] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.719 BST [16864] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:32.724 BST [16866] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.309 BST [16879] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.310 BST [16881] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.310 BST [16880] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.320 BST [16883] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.320 BST [16882] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.320 BST [16884] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.325 BST [16885] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.326 BST [16886] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.326 BST [16887] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:34.331 BST [16888] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.520 BST [16925] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.520 BST [16926] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.520 BST [16927] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.526 BST [16928] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.527 BST [16929] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.527 BST [16930] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.532 BST [16931] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.532 BST [16932] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.532 BST [16933] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:37.537 BST [16934] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.930 BST [16980] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.931 BST [16982] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.931 BST [16981] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.937 BST [16983] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.937 BST [16984] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.937 BST [16985] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.944 BST [16986] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.944 BST [16988] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.945 BST [16987] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:43.949 BST [16989] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.739 BST [17107] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.739 BST [17108] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.739 BST [17109] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.745 BST [17110] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.746 BST [17112] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.746 BST [17111] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.752 BST [17113] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.753 BST [17114] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.754 BST [17115] FATAL:  role "myuser" does not exist
+2024-07-25 16:39:56.758 BST [17116] FATAL:  role "myuser" does not exist
+2024-07-25 15:43:06.043 UTC [19132] LOG:  starting PostgreSQL 15.6 on x86_64-apple-darwin23.4.0, compiled by clang version 16.0.6, 64-bit
+2024-07-25 15:43:06.046 UTC [19132] LOG:  could not bind IPv6 address "::1": Address already in use
+2024-07-25 15:43:06.046 UTC [19132] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:43:06.047 UTC [19132] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2024-07-25 15:43:06.047 UTC [19132] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:43:06.047 UTC [19132] WARNING:  could not create listen socket for "localhost"
+2024-07-25 15:43:06.047 UTC [19132] FATAL:  could not create any TCP/IP sockets
+2024-07-25 15:43:06.049 UTC [19132] LOG:  database system is shut down
+2024-07-25 16:43:49.757 BST [19519] FATAL:  database "michaelyau" does not exist
+2024-07-25 16:44:05.310 BST [19656] FATAL:  role "myuser" does not exist
+2024-07-25 16:44:50.452 BST [20037] FATAL:  role "postgres" does not exist
+2024-07-25 16:45:07.862 BST [20185] FATAL:  database "michaelyau" does not exist
+2024-07-25 16:45:25.037 BST [20321] FATAL:  database "michaelyau" does not exist
+2024-07-25 16:46:10.269 BST [20718] FATAL:  role "postgres" does not exist
+2024-07-25 16:46:39.997 BST [20956] FATAL:  role "postgres-p" does not exist
+2024-07-25 16:46:57.292 BST [21128] FATAL:  role "postgres" does not exist
+2024-07-25 15:47:26.037 UTC [21447] LOG:  starting PostgreSQL 15.6 on x86_64-apple-darwin23.4.0, compiled by clang version 16.0.6, 64-bit
+2024-07-25 15:47:26.041 UTC [21447] LOG:  could not bind IPv6 address "::1": Address already in use
+2024-07-25 15:47:26.041 UTC [21447] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:47:26.041 UTC [21447] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2024-07-25 15:47:26.041 UTC [21447] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:47:26.041 UTC [21447] WARNING:  could not create listen socket for "localhost"
+2024-07-25 15:47:26.041 UTC [21447] FATAL:  could not create any TCP/IP sockets
+2024-07-25 15:47:26.042 UTC [21447] LOG:  database system is shut down
+2024-07-25 16:47:32.452 BST [21530] FATAL:  database "michaelyau" does not exist
+2024-07-25 16:47:33.840 BST [21553] FATAL:  role "myuser" does not exist
+2024-07-25 16:51:41.044 BST [26231] FATAL:  role "myuser" does not exist
+2024-07-25 16:52:04.591 BST [26441] FATAL:  role "postgres" does not exist
+2024-07-25 15:52:53.165 UTC [26936] LOG:  starting PostgreSQL 15.6 on x86_64-apple-darwin23.4.0, compiled by clang version 16.0.6, 64-bit
+2024-07-25 15:52:53.169 UTC [26936] LOG:  could not bind IPv6 address "::1": Address already in use
+2024-07-25 15:52:53.169 UTC [26936] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:52:53.169 UTC [26936] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2024-07-25 15:52:53.169 UTC [26936] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:52:53.169 UTC [26936] WARNING:  could not create listen socket for "localhost"
+2024-07-25 15:52:53.169 UTC [26936] FATAL:  could not create any TCP/IP sockets
+2024-07-25 15:52:53.171 UTC [26936] LOG:  database system is shut down
+2024-07-25 16:54:25.832 BST [27922] FATAL:  role "postgres" does not exist
+2024-07-25 15:54:30.464 UTC [27958] LOG:  starting PostgreSQL 15.6 on x86_64-apple-darwin23.4.0, compiled by clang version 16.0.6, 64-bit
+2024-07-25 15:54:30.468 UTC [27958] LOG:  could not bind IPv6 address "::1": Address already in use
+2024-07-25 15:54:30.468 UTC [27958] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:54:30.468 UTC [27958] LOG:  could not bind IPv4 address "127.0.0.1": Address already in use
+2024-07-25 15:54:30.468 UTC [27958] HINT:  Is another postmaster already running on port 5432? If not, wait a few seconds and retry.
+2024-07-25 15:54:30.468 UTC [27958] WARNING:  could not create listen socket for "localhost"
+2024-07-25 15:54:30.468 UTC [27958] FATAL:  could not create any TCP/IP sockets
+2024-07-25 15:54:30.470 UTC [27958] LOG:  database system is shut down
+2024-07-25 16:56:57.943 BST [29234] LOG:  starting PostgreSQL 15.6 on x86_64-apple-darwin23.4.0, compiled by clang version 16.0.6, 64-bit
+2024-07-25 16:56:57.947 BST [29234] LOG:  listening on IPv6 address "::1", port 5432
+2024-07-25 16:56:57.947 BST [29234] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2024-07-25 16:56:57.951 BST [29234] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2024-07-25 16:56:57.959 BST [29239] LOG:  database system was shut down at 2024-07-25 16:56:52 BST
+2024-07-25 16:56:57.970 BST [29234] LOG:  database system is ready to accept connections
+2024-07-25 16:57:15.384 BST [29388] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.385 BST [29389] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.385 BST [29387] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.391 BST [29390] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.391 BST [29391] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.391 BST [29392] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.397 BST [29393] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.397 BST [29394] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.398 BST [29395] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.402 BST [29396] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.797 BST [29398] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.797 BST [29399] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.797 BST [29400] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.804 BST [29401] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.804 BST [29402] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.804 BST [29403] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.811 BST [29405] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.811 BST [29404] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.811 BST [29406] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:15.816 BST [29407] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.607 BST [29408] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.607 BST [29409] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.607 BST [29410] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.613 BST [29411] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.614 BST [29412] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.614 BST [29413] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.620 BST [29414] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.620 BST [29415] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.620 BST [29416] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:16.625 BST [29417] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.218 BST [29433] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.218 BST [29434] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.218 BST [29435] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.224 BST [29437] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.224 BST [29439] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.225 BST [29438] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.231 BST [29440] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.232 BST [29441] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.232 BST [29442] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:18.237 BST [29443] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.426 BST [29479] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.427 BST [29480] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.427 BST [29481] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.433 BST [29482] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.433 BST [29483] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.433 BST [29484] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.439 BST [29485] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.440 BST [29486] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.440 BST [29487] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:21.444 BST [29488] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.838 BST [29537] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.838 BST [29536] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.838 BST [29538] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.844 BST [29539] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.844 BST [29540] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.844 BST [29541] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.850 BST [29542] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.851 BST [29543] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.851 BST [29544] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:27.855 BST [29545] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.649 BST [29648] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.649 BST [29650] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.650 BST [29649] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.656 BST [29651] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.656 BST [29652] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.656 BST [29653] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.662 BST [29654] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.663 BST [29655] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.663 BST [29656] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:40.667 BST [29657] FATAL:  role "myuser" does not exist
+2024-07-25 16:57:58.232 BST [29810] FATAL:  role "myuser" does not exist
+2024-07-25 16:58:08.600 BST [29899] FATAL:  database "michaelyau" does not exist
+2024-07-25 16:58:16.180 BST [29959] FATAL:  role "postgres" does not exist
+2024-07-25 16:59:20.901 BST [30484] FATAL:  role "postgres" does not exist
+2024-07-25 16:59:34.027 BST [30604] FATAL:  role "myuser" does not exist
+2024-07-25 17:00:00.844 BST [30835] FATAL:  role "postgres" does not exist
+2024-07-25 17:00:22.334 BST [31014] FATAL:  database "michaelyau" does not exist
+2024-07-25 17:00:40.291 BST [29234] LOG:  received fast shutdown request
+2024-07-25 17:00:40.292 BST [29234] LOG:  aborting any active transactions
+2024-07-25 17:00:40.295 BST [29234] LOG:  background worker "logical replication launcher" (PID 29242) exited with exit code 1
+2024-07-25 17:00:40.295 BST [29237] LOG:  shutting down
+2024-07-25 17:00:40.296 BST [29237] LOG:  checkpoint starting: shutdown immediate
+2024-07-25 17:00:40.303 BST [29237] LOG:  checkpoint complete: wrote 47 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.004 s, sync=0.002 s, total=0.008 s; sync files=11, longest=0.001 s, average=0.001 s; distance=272 kB, estimate=272 kB
+2024-07-25 17:00:40.308 BST [29234] LOG:  database system is shut down

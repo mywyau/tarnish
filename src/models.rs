@@ -1,13 +1,7 @@
-// src/models.rs
-
-use diesel::prelude::*;
-use diesel::Queryable;
-use diesel::Insertable;
-use diesel::QueryableByName;
+use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
-// For querying by name, if needed
-use crate::schema::posts;
 
+use crate::schema::posts;
 
 #[derive(Queryable, Serialize, Deserialize)]
 pub struct Post {
@@ -16,7 +10,7 @@ pub struct Post {
     pub body: String,
 }
 
-#[derive(Insertable, Serialize, Deserialize)]
+#[derive(Insertable)]
 #[diesel(table_name = posts)]
 pub struct NewPost {
     pub title: String,
