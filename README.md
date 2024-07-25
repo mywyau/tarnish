@@ -16,6 +16,12 @@ cargo build
 cargo run
 ```
 
+## To run Tests
+
+```
+cargo test
+```
+
 ## API Endpoints
 
 
