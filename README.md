@@ -1,22 +1,12 @@
 # tarnish
 
-### Refresh shell.nix
+## To run the dependencies using Nix
 
 ```
-sudo nixos-rebuild switch
+nix-shell
 ```
 
-### run default.nix for docker with postgres sql image
-
-```
-nix-build
-```
-
-
-```
-docker run -d -p 5432:5432 --name my-postgres $(cat result)
-```
-
+## To run the App
 
 ```
 cargo build
@@ -26,32 +16,52 @@ cargo build
 cargo run
 ```
 
+## API Endpoints
+
+
+## HTTPie example requests
+
+
+### Creating a blog post
 ```
-nix-build postgresql-docker.nix
+http POST http://localhost:8080/posts title="My First Post" body="This is the body of my first post."
 ```
 
+### Getting a blog post
+```
+http GET http://localhost:8080/posts/1
+```
+
+### Updating a blog post
+```
+http PUT http://localhost:8080/posts/1 title="Updated Title" body="This is the updated body."```
+```
+
+### Deleting a blog post
+```
+http DELETE http://localhost:8080/posts/1
+```
+
+## Postgres SQL
+
+To check if the connection is established and ready
 
 ```
-docker run --name my-postgres -d -p 5432:5432 result/postgresql-docker:latest
-```
-
-docker exec -it my-postgres psql -U myuser -d mydatabase
-
-docker run --name my-postgres \
--e POSTGRES_USER=myuser \
--e POSTGRES_PASSWORD=mypassword \
--e POSTGRES_DB=mydatabase \
--p 5432:5432 \
--d postgres:14
-
-initdb -D /var/lib/postgresql/data
-
-pg_ctl -D /var/lib/postgresql/data -l logfile start
-
-pg_ctl -D /var/lib/postgresql/data status
-
-psql -U myuser -d mydatabase -h localhost -p 5432
-
-
 pg_isready
+```
 
+### Login as a user into the Postgres SQL db
+
+```
+psql -U myuser -d postgres -h localhost -p 5432
+```
+
+
+### Creating the table for Blog Posts
+```
+CREATE TABLE posts (
+id SERIAL PRIMARY KEY,
+title VARCHAR NOT NULL,
+body TEXT NOT NULL
+);
+```

@@ -1,0 +1,17 @@
+docker run --name my-postgres \
+-e POSTGRES_USER=myuser \
+-e POSTGRES_PASSWORD=mypassword \
+-e POSTGRES_DB=postgres \
+-p 5432:5432 \
+-d postgres:14
+
+initdb -D /var/lib/postgresql/data
+
+pg_ctl -D /var/lib/postgresql/data -l logfile start
+
+pg_ctl -D /var/lib/postgresql/data status
+
+psql -U myuser -d postgres -h localhost -p 5432
+
+
+GRANT CREATE ON SCHEMA public TO myuser;
