@@ -28,29 +28,37 @@ struct PostInput {
 #[post("/posts")]
 async fn create_post(
     pool: web::Data<DbPool>,
-    post: web::Json<PostInput>,
-) -> Result<HttpResponse, Error> {
+    post: web::Json<PostInput>
+) -> Result<HttpResponse, actix_web::Error> {
     let new_post = NewPost {
         title: post.title.clone(),
         body: post.body.clone(),
     };
 
-    let conn = pool.get().expect("Couldn't get db connection from pool");
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
 
-    // Convert to mutable reference
-    let mut conn = conn;
-
-    match diesel::insert_into(posts::table)
-        .values(&new_post)
-        .get_result::<Post>(&mut conn) // Use mutable reference
-    {
-        Ok(post) => Ok(HttpResponse::Created().json(post)),
-        Err(e) => {
-            eprintln!("Error inserting new post: {:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
+    conn.transaction::<_, diesel::result::Error, _>(|conn| {
+        // Check if the table is empty
+        let post_count: i64 = posts::table.count().get_result(conn)?;
+        if post_count == 0 {
+            // Reset the sequence
+            diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1").execute(conn)?;
         }
-    }
+
+        // Insert the new post
+        diesel::insert_into(posts::table)
+            .values(&new_post)
+            .get_result::<Post>(conn)
+            .map_err(|e| {
+                eprintln!("Error inserting new post: {:?}", e);
+                e
+            })
+    }).map_err(|e| actix_web::error::ErrorInternalServerError(format!("Transaction failed: {}", e)))
+        .map(|post| HttpResponse::Created().json(post))
 }
+
 
 #[get("/posts/{id}")]
 async fn get_post(

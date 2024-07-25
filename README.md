@@ -22,6 +22,16 @@ cargo run
 cargo test
 ```
 
+To run a single test
+
+```
+cargo test --test <name of test spec>
+
+e.g.
+
+cargo test --test crud_operations 
+```
+
 ## API Endpoints
 
 
