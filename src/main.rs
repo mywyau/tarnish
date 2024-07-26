@@ -2,6 +2,7 @@ use std::env;
 
 use actix_web::{App, HttpServer, web};
 use dotenv::dotenv;
+use actix_cors::Cors;
 
 use my_project::crud::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_post, update_post};
 
@@ -13,6 +14,13 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(
+                Cors::default()
+                    .allow_any_origin() // Allow any origin
+                    .allow_any_method() // Allow any method
+                    .allow_any_header() // Allow any header
+                    .supports_credentials() // Allow credentials (cookies, authorization headers, etc.)
+            )
             .app_data(pool.clone())
             .service(create_post)
             .service(get_post)

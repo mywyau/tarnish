@@ -25,7 +25,7 @@ struct PostInput {
     body: String,
 }
 
-#[post("/blog/posts/create")]
+#[post("/blog/post/create")]
 async fn create_post(
     pool: web::Data<DbPool>,
     post: web::Json<PostInput>,
@@ -106,7 +106,7 @@ async fn update_post(
     }
 }
 
-#[delete("/blog/posts/single/{id}")]
+#[delete("/blog/post/single/{id}")]
 async fn delete_post(
     path: web::Path<i32>,
     pool: web::Data<DbPool>,
@@ -126,7 +126,7 @@ async fn delete_post(
     }
 }
 
-#[delete("/blog/posts/all")]
+#[delete("/blog/post/all")]
 async fn delete_all_posts(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
@@ -147,7 +147,7 @@ async fn delete_all_posts(
 use diesel::prelude::*;
 use serde_json::json; // Import `json` macro for creating JSON responses
 
-#[delete("/blog/posts/all/message")]
+#[delete("/blog/post/all/message")]
 async fn delete_all_posts_with_body(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
