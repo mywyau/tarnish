@@ -25,10 +25,10 @@ struct PostInput {
     body: String,
 }
 
-#[post("/posts")]
+#[post("/blog/posts/create")]
 async fn create_post(
     pool: web::Data<DbPool>,
-    post: web::Json<PostInput>
+    post: web::Json<PostInput>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let new_post = NewPost {
         title: post.title.clone(),
@@ -60,7 +60,7 @@ async fn create_post(
 }
 
 
-#[get("/posts/{id}")]
+#[get("/blog/post/retrieve/{id}")]
 async fn get_post(
     path: web::Path<i32>,
     pool: web::Data<DbPool>,
@@ -77,7 +77,7 @@ async fn get_post(
     }
 }
 
-#[put("/posts/{id}")]
+#[put("/blog/posts/update/{id}")]
 async fn update_post(
     path: web::Path<i32>,
     post: web::Json<PostInput>,
@@ -106,7 +106,7 @@ async fn update_post(
     }
 }
 
-#[delete("/posts/{id}")]
+#[delete("/blog/posts/single/{id}")]
 async fn delete_post(
     path: web::Path<i32>,
     pool: web::Data<DbPool>,
@@ -121,6 +121,54 @@ async fn delete_post(
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => {
             eprintln!("Error deleting post: {:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
+        }
+    }
+}
+
+#[delete("/blog/posts/all")]
+async fn delete_all_posts(
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, Error> {
+    let mut conn = pool.get().expect("Couldn't get db connection from pool");
+
+    // Execute the DELETE statement
+    match diesel::sql_query("DELETE FROM posts")
+        .execute(&mut conn)
+    {
+        Ok(_) => Ok(HttpResponse::NoContent().finish()), // No content returned after successful deletion
+        Err(e) => {
+            eprintln!("Error deleting posts: {:?}", e);
+            Ok(HttpResponse::InternalServerError().finish())
+        }
+    }
+}
+
+use diesel::prelude::*;
+use serde_json::json; // Import `json` macro for creating JSON responses
+
+#[delete("/blog/posts/all/message")]
+async fn delete_all_posts_with_body(
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, Error> {
+
+    let mut conn = pool.get().expect("Couldn't get db connection from pool");
+    // Execute the DELETE statement
+    match diesel::sql_query("DELETE FROM posts")
+        .execute(&mut conn)
+    {
+        Ok(_) => {
+            // Construct a JSON response body with a message
+            let response_body = json!({
+                "message": "All posts have been deleted."
+            });
+
+            Ok(HttpResponse::Ok()
+                .content_type("application/json")
+                .json(response_body))
+        }
+        Err(e) => {
+            eprintln!("Error deleting posts: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }

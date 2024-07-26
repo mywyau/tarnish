@@ -1,8 +1,9 @@
-use actix_web::{web, App, HttpServer};
-use dotenv::dotenv;
 use std::env;
 
-use my_project::crud::{create_post, get_post, update_post, delete_post, establish_connection};
+use actix_web::{App, HttpServer, web};
+use dotenv::dotenv;
+
+use my_project::crud::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_post, update_post};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -17,6 +18,8 @@ async fn main() -> std::io::Result<()> {
             .service(get_post)
             .service(update_post)
             .service(delete_post)
+            .service(delete_all_posts)
+            .service(delete_all_posts_with_body)
     })
         .bind(format!("0.0.0.0:{}", port))?
         .run()

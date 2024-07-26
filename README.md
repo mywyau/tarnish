@@ -40,22 +40,22 @@ cargo test --test crud_operations
 
 ### Creating a blog post
 ```
-http POST http://localhost:8080/posts title="My First Post" body="This is the body of my first post."
+http POST http://localhost:8080/blog/posts/create title="My First Post" body="This is the body of my first post."
 ```
 
 ### Getting a blog post
 ```
-http GET http://localhost:8080/posts/1
+http GET http://localhost:8080/blog/posts/retrieve/1
 ```
 
 ### Updating a blog post
 ```
-http PUT http://localhost:8080/posts/1 title="Updated Title" body="This is the updated body."```
+http PUT http://localhost:8080/blog/posts/update/1 title="Updated Title" body="This is the updated body."```
 ```
 
 ### Deleting a blog post
 ```
-http DELETE http://localhost:8080/posts/1
+http DELETE http://localhost:8080/blog/posts/delete/single/1
 ```
 
 ## Postgres SQL
