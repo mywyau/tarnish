@@ -55,7 +55,7 @@ http PUT http://localhost:8080/blog/posts/update/1 title="Updated Title" body="T
 
 ### Deleting a blog post
 ```
-http DELETE http://localhost:8080/blog/post/delete/single/1
+http DELETE http://localhost:8080/blog/post/single/1
 ```
 
 ### Deleting all blog posts
