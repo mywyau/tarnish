@@ -1,0 +1,13 @@
+
+- fix id incrementing system on creating posts
+- add a subject for the blog post
+- add image storage for blog posts
+- add video storage for blog posts
+- add comments section for blog post
+- add a way to retrieve all posts
+- add a endpoint to get a count of all blog posts
+- blog post id should be a uuid and not increment
+- add cors and secure http endpoints
+- create admin user only endpoint for creating posts, deleting posts etc.
+- create view only users for viewing posts no adding
+
