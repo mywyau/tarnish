@@ -5,6 +5,7 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 // Import schema
 use crate::models::{NewPost, Post};
@@ -21,6 +22,8 @@ pub fn establish_connection() -> DbPool {
 
 #[derive(Serialize, Deserialize)]
 struct PostInput {
+    id: i32,
+    post_id: String,
     title: String,
     body: String,
 }
@@ -29,10 +32,14 @@ struct PostInput {
 async fn create_post(
     pool: web::Data<DbPool>,
     post: web::Json<PostInput>,
-) -> Result<HttpResponse, actix_web::Error> {
+) -> Result<HttpResponse, Error> {
+    let post_input = post.into_inner();
+
     let new_post = NewPost {
-        title: post.title.clone(),
-        body: post.body.clone(),
+        id: post_input.id,
+        post_id: post_input.post_id,
+        title: post_input.title,
+        body: post_input.body,
     };
 
     let mut conn = pool.get().map_err(|e| {
@@ -59,6 +66,21 @@ async fn create_post(
         .map(|post| HttpResponse::Created().json(post))
 }
 
+#[get("/blog/post/retrieve/post-id/{post_id}")]
+async fn get_by_post_id(
+    path: web::Path<String>,
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, Error> {
+    let post_id = path.into_inner();
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
+
+    match posts::table.filter(posts::post_id.eq(post_id)).first::<Post>(&mut conn) {
+        Ok(post) => Ok(HttpResponse::Ok().json(post)),
+        Err(_) => Ok(HttpResponse::NotFound().finish()),
+    }
+}
 
 #[get("/blog/post/retrieve/{id}")]
 async fn get_post(
@@ -66,37 +88,38 @@ async fn get_post(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
     let id = path.into_inner();
-    let conn = pool.get().expect("Couldn't get db connection from pool");
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
 
-    // Convert to mutable reference
-    let mut conn = conn;
-
-    match posts::table.find(id).first::<Post>(&mut conn) { // Use mutable reference
+    match posts::table.find(id).first::<Post>(&mut conn) {
         Ok(post) => Ok(HttpResponse::Ok().json(post)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
 }
 
-#[put("/blog/posts/update/{id}")]
+#[put("/blog/posts/update/{post_id}")]
 async fn update_post(
-    path: web::Path<i32>,
+    path: web::Path<String>,
     post: web::Json<PostInput>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let id = path.into_inner();
+
+    let post_id = path.into_inner();
     let post_input = post.into_inner();
 
-    let conn = pool.get().expect("Couldn't get db connection from pool");
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
 
-    // Convert to mutable reference
-    let mut conn = conn;
-
-    match diesel::update(posts::table.find(id))
+    match diesel::update(posts::table.filter(posts::post_id.eq(post_id)))
         .set((
+            posts::id.eq(post_input.id),
+            posts::post_id.eq(post_input.post_id),
             posts::title.eq(post_input.title),
-            posts::body.eq(post_input.body)
+            posts::body.eq(post_input.body),
         ))
-        .execute(&mut conn) // Use mutable reference
+        .execute(&mut conn)
     {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => {
@@ -106,18 +129,17 @@ async fn update_post(
     }
 }
 
-#[delete("/blog/post/single/{id}")]
+#[delete("/blog/post/single/{post_id}")]
 async fn delete_post(
-    path: web::Path<i32>,
+    path: web::Path<String>,  // Changed to String since post_id is a varchar
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let id = path.into_inner();
-    let conn = pool.get().expect("Couldn't get db connection from pool");
+    let post_id = path.into_inner();
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
 
-    // Convert to mutable reference
-    let mut conn = conn;
-
-    match diesel::delete(posts::table.find(id)).execute(&mut conn) { // Use mutable reference
+    match diesel::delete(posts::table.filter(posts::post_id.eq(post_id))).execute(&mut conn) {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => {
             eprintln!("Error deleting post: {:?}", e);
@@ -130,13 +152,12 @@ async fn delete_post(
 async fn delete_all_posts(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = pool.get().expect("Couldn't get db connection from pool");
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
 
-    // Execute the DELETE statement
-    match diesel::sql_query("DELETE FROM posts")
-        .execute(&mut conn)
-    {
-        Ok(_) => Ok(HttpResponse::NoContent().finish()), // No content returned after successful deletion
+    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
+        Ok(_) => Ok(HttpResponse::NoContent().finish()),
         Err(e) => {
             eprintln!("Error deleting posts: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
@@ -144,21 +165,16 @@ async fn delete_all_posts(
     }
 }
 
-use diesel::prelude::*;
-use serde_json::json; // Import `json` macro for creating JSON responses
-
 #[delete("/blog/post/all/message")]
 async fn delete_all_posts_with_body(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
 
-    let mut conn = pool.get().expect("Couldn't get db connection from pool");
-    // Execute the DELETE statement
-    match diesel::sql_query("DELETE FROM posts")
-        .execute(&mut conn)
-    {
+    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
         Ok(_) => {
-            // Construct a JSON response body with a message
             let response_body = json!({
                 "message": "All posts have been deleted."
             });
