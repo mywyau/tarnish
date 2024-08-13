@@ -38,6 +38,12 @@ cargo test --test crud_operations
 ## HTTPie example requests
 
 
+### Healt check
+```
+http GET http://localhost:8080/health
+```
+
+
 ### Creating a blog post
 ```
 http POST http://localhost:8080/blog/post/create id:=1 post_id="post_id_mikey" title="My First Post" body="This is the body of my first post."

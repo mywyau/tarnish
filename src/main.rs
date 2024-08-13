@@ -1,10 +1,17 @@
 use std::env;
 
 use actix_cors::Cors;
-use actix_web::{App, HttpServer, web};
+use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 
 use my_project::crud::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_by_post_id, get_post, update_post};
+
+// Define a simple health check endpoint
+#[get("/health")]
+async fn health_check() -> impl Responder {
+    HttpResponse::Ok().body("OK")
+}
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -29,6 +36,7 @@ async fn main() -> std::io::Result<()> {
                     .allow_any_header()
                     .max_age(3600)
             )
+            .service(health_check)
             .service(create_post)
             .service(get_post)
             .service(get_by_post_id)
