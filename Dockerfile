@@ -1,24 +1,24 @@
-# Use Rust official image for backend
+# Use the official Rust image as the base
 FROM rust:latest
 
-# Set the working directory
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Cargo.toml and Cargo.lock
+# Copy the Cargo.toml and Cargo.lock to the working directory
 COPY Cargo.toml Cargo.lock ./
 
-# Build the dependencies
+# Copy the source code and other necessary files to the working directory
+COPY src ./src
+COPY migrations ./migrations
+
+# Build the dependencies (this step will cache the dependencies)
 RUN cargo build --release
 
-# Copy the source code
-COPY . .
-
-# Build the application
+# Copy the compiled output from the build stage
 RUN cargo install --path .
 
-# Expose the application on port 8080
+# Expose the port that the application will run on
 EXPOSE 8080
 
-# Run the application
+# Command to run the application
 CMD ["my-blog-backend"]
-
