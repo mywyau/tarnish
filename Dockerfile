@@ -11,6 +11,9 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY migrations ./migrations
 
+# Copy the .env file to the container
+COPY .env .env
+
 # Build the project in release mode
 RUN cargo build --release
 
