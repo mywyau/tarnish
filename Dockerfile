@@ -11,14 +11,14 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY migrations ./migrations
 
-# Build the dependencies (this step will cache the dependencies)
+# Build the project in release mode
 RUN cargo build --release
 
-# Copy the compiled output from the build stage
+# Install the compiled binary to /usr/local/cargo/bin
 RUN cargo install --path .
 
 # Expose the port that the application will run on
 EXPOSE 8080
 
-# Command to run the application
-CMD ["my-blog-backend"]
+# Run the installed binary; specify the full path if needed
+CMD ["/usr/local/cargo/bin/my-blog-backend"]
