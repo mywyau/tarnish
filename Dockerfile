@@ -14,11 +14,14 @@ COPY migrations ./migrations
 # Build the project in release mode
 RUN cargo build --release
 
-# Install the compiled binary to /usr/local/cargo/bin
+# Install the compiled binary
 RUN cargo install --path .
+
+# Verify that the binary exists (this is for debugging purposes)
+RUN ls /usr/local/cargo/bin
 
 # Expose the port that the application will run on
 EXPOSE 8080
 
-# Run the installed binary; specify the full path if needed
+# Run the installed binary using the full path
 CMD ["/usr/local/cargo/bin/my-blog-backend"]
