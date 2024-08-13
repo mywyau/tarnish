@@ -19,7 +19,6 @@ dotenv = "0.15"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 log = "0.4.22"
-actix-cors = "0.6" # Replace with the latest version
 
 [dev-dependencies]
 actix-rt = "2.0"

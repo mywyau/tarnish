@@ -50,8 +50,8 @@ http GET http://localhost:8080/blog/post/retrieve/1
 
 ### Getting a blog post by post_id
 ```
-http GET http://localhost:8080/blog/posts/retrieve/some_string
-http GET http://localhost:8080/blog/posts/retrieve/post-id/mikey-1
+http GET http://localhost:8080/blog/post/retrieve/some_string
+http GET http://localhost:8080/blog/post/retrieve/post-id/mikey-1
 ```
 
 
