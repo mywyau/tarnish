@@ -40,7 +40,7 @@ cargo test --test crud_operations
 
 ### Creating a blog post
 ```
-http POST http://localhost:8080/blog/post/create/mikey-1 id= 1 post_id="post_id_mikey" title="My First Post" body="This is the body of my first post."
+http POST http://localhost:8080/blog/post/create id:=1 post_id="post_id_mikey" title="My First Post" body="This is the body of my first post."
 ```
 
 ### Getting a blog post
@@ -57,7 +57,7 @@ http GET http://localhost:8080/blog/post/retrieve/post-id/mikey-1
 
 ### Updating a blog post
 ```
-http PUT http://localhost:8080/blog/posts/update/post_id_mikey id= 1 post_id="post_id_mikey" title="Updated Title" body="This is the updated body."```
+http PUT http://localhost:8080/blog/posts/update/post_id_mikey id:=1 post_id="post_id_mikey" title="Updated Title" body="This is the updated body."```
 ```
 
 ### Deleting a blog post
@@ -118,3 +118,7 @@ DROP TABLE <table name>
 ```
 DROP TABLE *
 ```
+
+docker-compose up -d
+
+diesel migration run
