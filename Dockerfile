@@ -23,5 +23,5 @@ RUN ls /usr/local/cargo/bin
 # Expose the port that the application will run on
 EXPOSE 8080
 
-# Run the installed binary using the full path
-CMD ["/usr/local/cargo/bin/my-blog-backend"]
+# Run the installed binary using the project name
+CMD ["tarnish"]
