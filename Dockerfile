@@ -10,10 +10,6 @@ COPY . .
 # Copy the Cargo.toml and Cargo.lock to the working directory
 COPY Cargo.toml Cargo.lock ./
 
-# Copy the source code and othe r necessary files to the working directory
-COPY src ./src
-COPY migrations ./migrations
-
 # Ensure the environment file is in place
 COPY .env.github-actions .env
 
