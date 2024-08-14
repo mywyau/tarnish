@@ -14,8 +14,11 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY migrations ./migrations
 
-# Copy the .env file to the container
-COPY .env .env
+# Ensure the environment file is in place
+COPY .env.github-actions .env
+
+# Debug: Check the contents of the .env file
+RUN echo "Contents of .env:" && cat .env
 
 # Build the project in release mode
 RUN cargo build --release
