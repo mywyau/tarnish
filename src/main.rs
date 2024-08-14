@@ -12,7 +12,6 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok().body("OK")
 }
 
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -24,18 +23,12 @@ async fn main() -> std::io::Result<()> {
             .wrap(
                 Cors::default()
                     .allow_any_origin() // Allow any origin
-                    .allow_any_method() // Allow any method
-                    .allow_any_header() // Allow any header
-                    .supports_credentials() // Allow credentials (cookies, authorization headers, etc.)
+                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+                    .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT, http::header::CONTENT_TYPE])
+                    .supports_credentials() // If you need to allow credentials
+                    .max_age(3600) // Cache the preflight response for 1 hour
             )
             .app_data(pool.clone())
-            .wrap(
-                Cors::default()
-                    .allow_any_origin()
-                    .allow_any_method()
-                    .allow_any_header()
-                    .max_age(3600)
-            )
             .service(health_check)
             .service(create_post)
             .service(get_post)
