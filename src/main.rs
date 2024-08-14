@@ -1,7 +1,7 @@
 use std::env;
 
 use actix_cors::Cors;
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, http, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 
 use my_project::crud::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_by_post_id, get_post, update_post};
