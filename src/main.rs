@@ -24,7 +24,7 @@ async fn main() -> std::io::Result<()> {
                 Cors::default()
                     .allow_any_origin() // Allow any origin
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-                    .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT, http::header::CONTENT_TYPE])
+                    .allow_any_header()
                     .supports_credentials() // If you need to allow credentials
                     .max_age(3600) // Cache the preflight response for 1 hour
             )
