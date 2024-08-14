@@ -4,7 +4,7 @@ FROM rust:latest as builder
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy Cargo.toml and Cargo.lock to the working directory
+# Copy the Cargo.toml and Cargo.lock to the working directory
 COPY Cargo.toml Cargo.lock ./
 
 # Create a dummy src directory to pre-fetch dependencies
@@ -38,7 +38,7 @@ WORKDIR /app
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/target/release/tarnish .
 
-# Copy the .env file to the container (if needed)
+# Copy the .env file to the container
 COPY --from=builder /app/.env .env
 
 # Expose the port that the application will run on
