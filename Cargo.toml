@@ -14,10 +14,10 @@ log = "0.4.22"
 
 
 [dev-dependencies]
-actix-rt = "2.0"
-#diesel_cli = { version = "2.0.0", features = ["postgres"] }
-
+actix-rt = "2.6"
+actix-web = "4.0"
+diesel = { version = "2.0", features = ["postgres", "r2d2"] }
 
 [lib]
-name = "my_project"
+name = "tarnish"
 path = "src/lib.rs"

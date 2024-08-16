@@ -21,11 +21,23 @@ pub fn establish_connection() -> DbPool {
 }
 
 #[derive(Serialize, Deserialize)]
-struct PostInput {
-    id: i32,
-    post_id: String,
-    title: String,
-    body: String,
+pub struct PostInput {
+    pub id: i32,
+    pub post_id: String,
+    pub title: String,
+    pub body: String,
+}
+
+impl PostInput {
+    // Constructor method for creating a new PostInput
+    pub fn new(id: i32, post_id: String, title: String, body: String) -> Self {
+        PostInput {
+            id,
+            post_id,
+            title,
+            body,
+        }
+    }
 }
 
 #[post("/blog/post/create")]
@@ -95,6 +107,18 @@ async fn get_post(
     match posts::table.find(id).first::<Post>(&mut conn) {
         Ok(post) => Ok(HttpResponse::Ok().json(post)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
+    }
+}
+
+#[get("/blog/post/retrieve/all")]
+async fn get_all_posts(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+    let mut conn = pool.get().map_err(|e| {
+        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+    })?;
+
+    match posts::table.load::<Post>(&mut conn) {
+        Ok(posts) => Ok(HttpResponse::Ok().json(posts)),
+        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 

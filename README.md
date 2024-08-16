@@ -128,3 +128,6 @@ DROP TABLE *
 docker-compose up -d
 
 diesel migration run
+
+### Superuser
+psql -U postgres
