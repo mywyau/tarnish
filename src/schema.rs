@@ -20,11 +20,11 @@ table! {
     }
 }
 
-table! {
-    test_posts (id) {
-        id -> Int4,
-        post_id -> Varchar,
-        title -> Varchar,
-        body -> Text,
-    }
-}
+// table! {
+//     test_posts (id) {
+//         id -> Int4,
+//         post_id -> Varchar,
+//         title -> Varchar,
+//         body -> Text,
+//     }
+// }

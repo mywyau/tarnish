@@ -95,6 +95,8 @@ pg_isready
 psql -U myuser -d postgres -h localhost -p 5432
 ```
 
+psql -U test -d test_db -h localhost -p 5432
+
 ### Creating the table for Blog Posts
 ```
 CREATE TABLE posts (
@@ -125,8 +127,10 @@ DROP TABLE <table name>
 DROP TABLE *
 ```
 
+### Start up postgres in docker container if not present  
 docker-compose up -d
 
+### Set up database table if not present
 diesel migration run
 
 ### Superuser
