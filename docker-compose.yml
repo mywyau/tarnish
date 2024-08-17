@@ -14,6 +14,17 @@ services:
     networks:
       - mynetwork
 
+  test-postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test-password
+      POSTGRES_DB: test_db
+    ports:
+      - "5430:5432"  # Map host port 5430 to container port 5432
+    networks:
+      - mynetwork
+
 volumes:
   postgres_data:
 
