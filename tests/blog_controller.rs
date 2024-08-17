@@ -50,28 +50,57 @@ fn setup_test_db() -> DbPool {
     r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
 }
 
+// fn setup() -> (DbPool, PooledConnection<ConnectionManager<PgConnection>>) {
+//     let pool = setup_test_db();
+//     let mut conn: PooledConnection<ConnectionManager<PgConnection>> = pool.get().expect("Couldn't get db connection");
+//
+//     // Lock the mutex to ensure only one test resets the database at a time
+//     let _lock = DB_MUTEX.lock().unwrap();
+//
+//     // Drop the lock explicitly (optional, will automatically be dropped when it goes out of scope)
+//     drop(_lock);
+//
+//     (pool, conn)
+// }
+
+
+// fn setup() -> (DbPool, PooledConnection<ConnectionManager<PgConnection>>) {
+//     let pool = setup_test_db();
+//     let mut conn = pool.get().expect("Couldn't get db connection");
+//
+//     // Lock the mutex to ensure only one test resets the database at a time
+//     let _lock = DB_MUTEX.lock().unwrap();
+//
+//     // Reset the database before running the test
+//     reset_database(&mut conn);
+//
+//     // Mutex lock will be automatically released when `_lock` goes out of scope
+//     (pool, conn)
+// }
+
 fn setup() -> (DbPool, PooledConnection<ConnectionManager<PgConnection>>) {
     let pool = setup_test_db();
-    let mut conn: PooledConnection<ConnectionManager<PgConnection>> = pool.get().expect("Couldn't get db connection");
+    let mut conn = pool.get().expect("Couldn't get db connection");
 
-    // Lock the mutex to ensure only one test resets the database at a time
-    let _lock = DB_MUTEX.lock().unwrap();
+    // Lock the mutex and handle PoisonError
+    let _lock = DB_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
 
-    // Drop the lock explicitly (optional, will automatically be dropped when it goes out of scope)
-    drop(_lock);
+    // Reset the database before running the test
+    reset_database(&mut conn);
 
+    // Mutex lock will be automatically released when `_lock` goes out of scope
     (pool, conn)
 }
 
+
+
 #[actix_rt::test]
 async fn test_create_post() {
+    // Lock the mutex to ensure only one test accesses the database at a time
+    let _lock = DB_MUTEX.lock().unwrap();
+
     let pool = setup_test_db();
-
-    // Acquire a database connection
     let mut conn = pool.get().expect("Couldn't get db connection");
-
-    // Reset the database before running the test
-    // reset_database(&mut conn);
 
     let new_post = Post {
         id: 1,
@@ -94,13 +123,16 @@ async fn test_create_post() {
     assert_eq!(result.post_id, "test_post_1");
 
     delete_posts_by_ids(&mut conn, vec![1]);
+
+    // The mutex lock is automatically released here when `_lock` goes out of scope
 }
 
 #[actix_rt::test]
 async fn test_update_post() {
-    let pool = setup_test_db();
+    // Lock the mutex to ensure only one test accesses the database at a time
+    let _lock = DB_MUTEX.lock().unwrap();
 
-    // Acquire a database connection
+    let pool = setup_test_db();
     let mut conn = pool.get().expect("Couldn't get db connection");
 
     // Insert a post to be updated
@@ -138,14 +170,18 @@ async fn test_update_post() {
             .expect("Post not found");
 
     assert_eq!(updated_post.title, "Updated Post");
+
     delete_posts_by_ids(&mut conn, vec![2]);
+
+    // The mutex lock is automatically released here when `_lock` goes out of scope
 }
 
 #[actix_rt::test]
 async fn test_delete_post() {
-    let pool = setup_test_db();
+    // Lock the mutex to ensure only one test accesses the database at a time
+    let _lock = DB_MUTEX.lock().unwrap();
 
-    // Acquire a database connection
+    let pool = setup_test_db();
     let mut conn = pool.get().expect("Couldn't get db connection");
 
     // Insert a post to be deleted
@@ -173,16 +209,58 @@ async fn test_delete_post() {
         .first(&mut conn);
 
     assert!(deleted_post.is_err());
+
+    // The mutex lock is automatically released here when `_lock` goes out of scope
 }
+
+// #[actix_rt::test]
+// async fn test_get_all_posts() {
+//     // Lock the mutex to ensure only one test accesses the database at a time
+//     let _lock = DB_MUTEX.lock().unwrap();
+//
+//     let pool = setup_test_db();
+//     let mut conn = pool.get().expect("Couldn't get db connection");
+//
+//     // Insert some posts
+//     diesel::insert_into(posts::table)
+//         .values(&vec![
+//             Post {
+//                 id: 4,
+//                 post_id: "post_4".into(),
+//                 title: "First Post".into(),
+//                 body: "This is the first test post.".into(),
+//             },
+//             Post {
+//                 id: 5,
+//                 post_id: "post_5".into(),
+//                 title: "Second Post".into(),
+//                 body: "This is the second test post.".into(),
+//             },
+//         ])
+//         .execute(&mut conn)
+//         .expect("Error inserting test posts");
+//
+//     let app = test::init_service(App::new().app_data(web::Data::new(pool.clone())).service(get_all_posts)).await;
+//
+//     let req = test::TestRequest::get()
+//         .uri("/blog/post/retrieve/all")
+//         .to_request();
+//
+//     let resp = test::call_service(&app, req).await;
+//     assert_eq!(resp.status(), 200);
+//
+//     let result: Vec<Post> = test::read_body_json(resp).await;
+//     assert_eq!(result.len(), 2);
+//
+//     delete_posts_by_ids(&mut conn, vec![4, 5]);
+//
+//     // The mutex lock is automatically released here when `_lock` goes out of scope
+// }
 
 #[actix_rt::test]
 async fn test_get_all_posts() {
-
-    let pool = setup_test_db();
-
-    // Acquire a database connection
-    let mut conn =
-        pool.get().expect("Couldn't get db connection");
+    // Setup with Mutex lock to ensure serialized access to the database
+    let (pool, mut conn) = setup();
 
     // Insert some posts
     diesel::insert_into(posts::table)
@@ -214,5 +292,5 @@ async fn test_get_all_posts() {
 
     let result: Vec<Post> = test::read_body_json(resp).await;
     assert_eq!(result.len(), 2);
-    delete_posts_by_ids(&mut conn, vec![4, 5]);
 }
+
