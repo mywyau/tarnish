@@ -14,17 +14,8 @@ pub struct Post {
 #[derive(Insertable, Queryable, Serialize, Deserialize)]
 #[diesel(table_name = posts)]
 pub struct NewPost {
-    pub id: i32,
+    // pub id: i32,
     pub post_id: String,
     pub title: String,
     pub body: String,
 }
-
-// #[derive(Insertable, Serialize, Deserialize)]
-// #[table_name = "posts"]
-// pub struct NewPost<'a> {
-//     pub id: i32,
-//     pub post_id: &'a str,
-//     pub title: &'a str,
-//     pub body: &'a str,
-// }
