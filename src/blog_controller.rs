@@ -140,7 +140,7 @@ async fn get_post(
     }
 }
 
-#[get("/blog/post/retrieve/all")]
+#[get("/blog/post/get/all")]
 async fn get_all_posts(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
