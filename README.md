@@ -54,6 +54,10 @@ http POST http://localhost:8080/blog/post/create id:=1 post_id="post_id_mikey" t
 http GET http://localhost:8080/blog/post/retrieve/1
 ```
 
+```
+http GET http://localhost:8080/blog/post/get/all
+```
+
 ### Getting a blog post by post_id
 ```
 http GET http://localhost:8080/blog/post/retrieve/some_string
@@ -93,6 +97,8 @@ pg_isready
 
 ```
 psql -U myuser -d postgres -h localhost -p 5432
+psql postgres://myuser:mypassword@localhost:5432/postgres
+
 ```
 
 psql -U test -d test_db -h localhost -p 5432

@@ -4,7 +4,7 @@ use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 
-use tarnish::blog_controller::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_by_post_id, get_post, update_post};
+use tarnish::blog_controller::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_all_posts, get_by_post_id, get_post, update_post};
 
 // Define a simple health check endpoint
 #[get("/health")]
@@ -33,6 +33,7 @@ async fn main() -> std::io::Result<()> {
             .service(create_post)
             .service(get_post)
             .service(get_by_post_id)
+            .service(get_all_posts)
             .service(update_post)
             .service(delete_post)
             .service(delete_all_posts)
