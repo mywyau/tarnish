@@ -157,15 +157,14 @@ async fn delete_post(
     })?;
 
     // First, retrieve the title of the post before deleting it
-    let post_title =
-        posts::table
-            .filter(posts::post_id.eq(&post_id))
-            .select(posts::title)
-            .first::<String>(&mut conn)
-            .optional()
-            .map_err(|e| {
-                actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
-            })?;
+    let post_title = posts::table
+        .filter(posts::post_id.eq(&post_id))
+        .select(posts::title)
+        .first::<String>(&mut conn)
+        .optional()
+        .map_err(|e| {
+            actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
+        })?;
 
     match post_title {
         Some(title) => {
