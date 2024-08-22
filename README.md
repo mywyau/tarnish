@@ -85,6 +85,11 @@ http DELETE http://localhost:8080/blog/post/all
 http DELETE http://localhost:8080/blog/posts/all/message
 ```
 
+### Deleting a single blog post based on post_id
+```
+http DELETE http://localhost:8080/blog/post/single/{post_id}
+```
+
 ## Postgres SQL
 
 To check if the connection is established and ready

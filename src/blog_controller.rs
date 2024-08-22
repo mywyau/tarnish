@@ -71,43 +71,6 @@ async fn create_post(
 }
 
 
-// #[post("/blog/post/create")]
-// async fn create_post(
-//     pool: web::Data<DbPool>,
-//     post: web::Json<PostInput>,
-// ) -> Result<HttpResponse, Error> {
-//     let post_input = post.into_inner();
-//
-//     let new_post = NewPost {
-//         post_id: post_input.post_id,
-//         title: post_input.title,
-//         body: post_input.body,
-//     };
-//
-//     let mut conn = pool.get().map_err(|e| {
-//         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
-//     })?;
-//
-//     conn.transaction::<_, diesel::result::Error, _>(|conn| {
-//         // // Check if the table is empty
-//         // let post_count: i64 = posts::table.count().get_result(conn)?;
-//         // if post_count == 0 {
-//         //     // Reset the sequence
-//         //     diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1").execute(conn)?;
-//         // }
-//
-//         // Insert the new post
-//         diesel::insert_into(posts::table)
-//             .values(&new_post)
-//             .get_result::<Post>(conn)
-//             .map_err(|e| {
-//                 eprintln!("Error inserting new post: {:?}", e);
-//                 e
-//             })
-//     }).map_err(|e| actix_web::error::ErrorInternalServerError(format!("Transaction failed: {}", e)))
-//         .map(|post| HttpResponse::Created().json(post))
-// }
-
 #[get("/blog/post/retrieve/post-id/{post_id}")]
 async fn get_by_post_id(
     path: web::Path<String>,
@@ -194,14 +157,15 @@ async fn delete_post(
     })?;
 
     // First, retrieve the title of the post before deleting it
-    let post_title = posts::table
-        .filter(posts::post_id.eq(&post_id))
-        .select(posts::title)
-        .first::<String>(&mut conn)
-        .optional()
-        .map_err(|e| {
-            actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
-        })?;
+    let post_title =
+        posts::table
+            .filter(posts::post_id.eq(&post_id))
+            .select(posts::title)
+            .first::<String>(&mut conn)
+            .optional()
+            .map_err(|e| {
+                actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
+            })?;
 
     match post_title {
         Some(title) => {
