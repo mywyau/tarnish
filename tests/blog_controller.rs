@@ -6,7 +6,7 @@ use dotenv::dotenv;
 use std::env;
 
 use tarnish::blog_controller::*;
-use tarnish::models::{NewPost, Post};
+use tarnish::blog_models::{NewPost, Post};
 // Use the correct path based on your project name in Cargo.toml
 use tarnish::schema::posts;
 

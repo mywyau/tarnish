@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 // Import schema
-use crate::blog_models::{NewPost, Post};
+use crate::models::{NewPost, Post};
 use crate::schema::posts;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
