@@ -1,6 +1,6 @@
 use std::env;
 
-use actix_web::{delete, get, post, put, web, Error, HttpResponse};
+use actix_web::{delete, get, worklog, put, web, Error, HttpResponse};
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 // Import schema
-use crate::models::{NewPost, Post};
-use crate::schema::posts;
+use crate::blog_models::{NewWorkLog, WorkLog};
+use crate::blog_schema::worklogs;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -21,36 +21,43 @@ pub fn establish_connection() -> DbPool {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct PostInput {
+pub struct WorkLogInput {
     pub id: i32,
-    pub post_id: String,
+    pub worklog_id: String,
+    pub work_title: String,
     pub title: String,
     pub body: String,
+    pub time_created: String,
+    pub time_updated: String
 }
 
-impl PostInput {
-    // Constructor method for creating a new PostInput
-    pub fn new(id: i32, post_id: String, title: String, body: String) -> Self {
-        PostInput {
+
+
+impl WorkLogInput {
+    // Constructor method for creating a new WorkLogInput
+    pub fn new(id: i32, worklog_id: String, work_title: String, body: String, time_created:String, time_updated:String) -> Self {
+        WorkLogInput {
             id,
-            post_id,
-            title,
+            worklog_id,
+            work_title,
             body,
+            time_created,
+            time_updated
         }
     }
 }
 
-#[post("/blog/post/create")]
-async fn create_post(
+#[worklog("/blog/worklog/create")]
+async fn create_worklog(
     pool: web::Data<DbPool>,
-    post: web::Json<PostInput>,
+    worklog: web::Json<WorkLogInput>,
 ) -> Result<HttpResponse, Error> {
-    let post_input = post.into_inner();
+    let worklog_input = worklog.into_inner();
 
-    let new_post = NewPost {
-        post_id: post_input.post_id,
-        title: post_input.title,
-        body: post_input.body,
+    let new_worklog = NewWorkLog {
+        worklog_id: worklog_input.worklog_id,
+        title: worklog_input.title,
+        body: worklog_input.body,
     };
 
     let mut conn = pool.get().map_err(|e| {
@@ -58,37 +65,36 @@ async fn create_post(
     })?;
 
     conn.transaction::<_, diesel::result::Error, _>(|conn| {
-        // Insert the new post
-        diesel::insert_into(posts::table)
-            .values(&new_post)
-            .get_result::<Post>(conn)
+        // Insert the new worklog
+        diesel::insert_into(worklogs::table)
+            .values(&new_worklog)
+            .get_result::<WorkLog>(conn)
             .map_err(|e| {
-                eprintln!("Error inserting new post: {:?}", e);
+                eprintln!("Error inserting new worklog: {:?}", e);
                 e
             })
     }).map_err(|e| actix_web::error::ErrorInternalServerError(format!("Transaction failed: {}", e)))
-        .map(|post| HttpResponse::Created().json(post))
+        .map(|worklog| HttpResponse::Created().json(worklog))
 }
 
-
-#[get("/blog/post/retrieve/post-id/{post_id}")]
-async fn get_by_post_id(
+#[get("/blog/worklog/retrieve/worklog-id/{worklog_id}")]
+async fn get_by_worklog_id(
     path: web::Path<String>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let post_id = path.into_inner();
+    let worklog_id = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.filter(posts::post_id.eq(post_id)).first::<Post>(&mut conn) {
-        Ok(post) => Ok(HttpResponse::Ok().json(post)),
+    match worklogs::table.filter(worklogs::worklog_id.eq(worklog_id)).first::<WorkLog>(&mut conn) {
+        Ok(worklog) => Ok(HttpResponse::Ok().json(worklog)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
 }
 
-#[get("/blog/post/retrieve/{id}")]
-async fn get_post(
+#[get("/blog/worklog/retrieve/{id}")]
+async fn get_worklog(
     path: web::Path<i32>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
@@ -97,83 +103,83 @@ async fn get_post(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.find(id).first::<Post>(&mut conn) {
-        Ok(post) => Ok(HttpResponse::Ok().json(post)),
+    match worklogs::table.find(id).first::<WorkLog>(&mut conn) {
+        Ok(worklog) => Ok(HttpResponse::Ok().json(worklog)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
 }
 
-#[get("/blog/post/get/all")]
-async fn get_all_posts(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+#[get("/blog/worklog/get/all")]
+async fn get_all_worklogs(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.load::<Post>(&mut conn) {
-        Ok(posts) => Ok(HttpResponse::Ok().json(posts)),
+    match worklogs::table.load::<WorkLog>(&mut conn) {
+        Ok(worklogs) => Ok(HttpResponse::Ok().json(worklogs)),
         Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-#[put("/blog/posts/update/{post_id}")]
-async fn update_post(
+#[put("/blog/worklogs/update/{worklog_id}")]
+async fn update_worklog(
     path: web::Path<String>,
-    post: web::Json<PostInput>,
+    worklog: web::Json<WorkLogInput>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let post_id = path.into_inner();
-    let post_input = post.into_inner();
+    let worklog_id = path.into_inner();
+    let worklog_input = worklog.into_inner();
 
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::update(posts::table.filter(posts::post_id.eq(post_id)))
+    match diesel::update(worklogs::table.filter(worklogs::worklog_id.eq(worklog_id)))
         .set((
-            posts::id.eq(post_input.id),
-            posts::post_id.eq(post_input.post_id),
-            posts::title.eq(post_input.title),
-            posts::body.eq(post_input.body),
+            worklogs::id.eq(worklog_input.id),
+            worklogs::worklog_id.eq(worklog_input.worklog_id),
+            worklogs::title.eq(worklog_input.title),
+            worklogs::body.eq(worklog_input.body),
         ))
         .execute(&mut conn)
     {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => {
-            eprintln!("Error updating post: {:?}", e);
+            eprintln!("Error updating worklog: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }
 }
 
 
-#[delete("/blog/post/single/{post_id}")]
-async fn delete_post(
-    path: web::Path<String>,  // Changed to String since post_id is a varchar
+#[delete("/blog/worklog/single/{worklog_id}")]
+async fn delete_worklog(
+    path: web::Path<String>,  // Changed to String since worklog_id is a varchar
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let post_id = path.into_inner();
+    let worklog_id = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    // First, retrieve the title of the post before deleting it
-    let post_title =
-        posts::table
-            .filter(posts::post_id.eq(&post_id))
-            .select(posts::title)
+    // First, retrieve the title of the worklog before deleting it
+    let worklog_title =
+        worklogs::table
+            .filter(worklogs::worklog_id.eq(&worklog_id))
+            .select(worklogs::title)
             .first::<String>(&mut conn)
             .optional()
             .map_err(|e| {
-                actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
+                actix_web::error::ErrorInternalServerError(format!("Error retrieving worklog title: {}", e))
             })?;
 
-    match post_title {
+    match worklog_title {
         Some(title) => {
-            // Now delete the post
-            match diesel::delete(posts::table.filter(posts::post_id.eq(&post_id))).execute(&mut conn) {
+            // Now delete the worklog
+            match diesel::delete(worklogs::table.filter(worklogs::worklog_id.eq(&worklog_id))).execute(&mut conn) {
                 Ok(_) => {
                     let response_body = json!({
-                        "message": format!("Blog post '{}' has been deleted", title)
+                        "message": format!("Blog worklog '{}' has been deleted", title)
                     });
 
                     Ok(HttpResponse::Ok()
@@ -181,15 +187,15 @@ async fn delete_post(
                         .json(response_body))
                 }
                 Err(e) => {
-                    eprintln!("Error deleting post: {:?}", e);
+                    eprintln!("Error deleting worklog: {:?}", e);
                     Ok(HttpResponse::InternalServerError().finish())
                 }
             }
         }
         None => {
-            // If no post with the given ID is found
+            // If no worklog with the given ID is found
             let response_body = json!({
-                "error": format!("Blog post with ID '{}' not found", post_id)
+                "error": format!("Blog worklog with ID '{}' not found", worklog_id)
             });
 
             Ok(HttpResponse::NotFound()
@@ -199,35 +205,35 @@ async fn delete_post(
     }
 }
 
-#[delete("/blog/post/all")]
-async fn delete_all_posts(
+#[delete("/blog/worklog/all")]
+async fn delete_all_worklog(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
+    match diesel::sql_query("DELETE FROM worklogs").execute(&mut conn) {
         Ok(_) => Ok(HttpResponse::NoContent().finish()),
         Err(e) => {
-            eprintln!("Error deleting posts: {:?}", e);
+            eprintln!("Error deleting worklogs: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }
 }
 
-#[delete("/blog/post/all/message")]
-async fn delete_all_posts_with_body(
+#[delete("/blog/worklog/all/message")]
+async fn delete_all_worklog_with_body(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
+    match diesel::sql_query("DELETE FROM worklogs").execute(&mut conn) {
         Ok(_) => {
             let response_body = json!({
-                "message": "All posts have been deleted."
+                "message": "All worklogs have been deleted."
             });
 
             Ok(HttpResponse::Ok()
@@ -235,7 +241,7 @@ async fn delete_all_posts_with_body(
                 .json(response_body))
         }
         Err(e) => {
-            eprintln!("Error deleting posts: {:?}", e);
+            eprintln!("Error deleting worklogs: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }

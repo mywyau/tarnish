@@ -8,7 +8,7 @@ use std::env;
 use tarnish::blog_controller::*;
 use tarnish::blog_models::{NewPost, Post};
 // Use the correct path based on your project name in Cargo.toml
-use tarnish::schema::posts;
+use tarnish::blog_schema::posts;
 
 use lazy_static::lazy_static;
 use std::sync::Mutex;

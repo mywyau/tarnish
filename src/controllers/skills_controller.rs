@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 // Import schema
-use crate::blog_models::{NewPost, Post};
-use crate::schema::posts;
+use crate::schemas::skills_schema::skills;
+use crate::Skill;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -21,74 +21,76 @@ pub fn establish_connection() -> DbPool {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct PostInput {
+pub struct SkillInput {
     pub id: i32,
-    pub post_id: String,
-    pub title: String,
+    pub skill_id: String,
+    pub skill_name: String,
     pub body: String,
 }
 
-impl PostInput {
-    // Constructor method for creating a new PostInput
-    pub fn new(id: i32, post_id: String, title: String, body: String) -> Self {
-        PostInput {
+impl SkillInput {
+    // Constructor method for creating a new SkillInput
+    pub fn new(id: i32, skill_id: String, skill_name: String, body: String) -> Self {
+        SkillInput {
             id,
-            post_id,
-            title,
+            skill_id,
+            skill_name,
             body,
         }
     }
 }
 
-#[post("/blog/post/create")]
-async fn create_post(
+#[post("/blog/skill/create")]
+async fn create_skill(
     pool: web::Data<DbPool>,
-    post: web::Json<PostInput>,
+    skill: web::Json<SkillInput>,
 ) -> Result<HttpResponse, Error> {
-    let post_input = post.into_inner();
+    let skill_input = skill.into_inner();
 
-    let new_post = NewPost {
-        post_id: post_input.post_id,
-        title: post_input.title,
-        body: post_input.body,
-    };
+    let new_skill =
+        Skill {
+            id: skill_input.id,
+            skill_id: skill_input.skill_id,
+            skill_name: skill_input.skill_name,
+            body: skill_input.body,
+        };
 
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
     conn.transaction::<_, diesel::result::Error, _>(|conn| {
-        // Insert the new post
-        diesel::insert_into(posts::table)
-            .values(&new_post)
-            .get_result::<Post>(conn)
+        // Insert the new skill
+        diesel::insert_into(skills::table)
+            .values(&new_skill)
+            .get_result::<Skill>(conn)
             .map_err(|e| {
-                eprintln!("Error inserting new post: {:?}", e);
+                eprintln!("Error inserting new skill: {:?}", e);
                 e
             })
     }).map_err(|e| actix_web::error::ErrorInternalServerError(format!("Transaction failed: {}", e)))
-        .map(|post| HttpResponse::Created().json(post))
+        .map(|skill| HttpResponse::Created().json(skill))
 }
 
 
-#[get("/blog/post/retrieve/post-id/{post_id}")]
-async fn get_by_post_id(
+#[get("/blog/skill/retrieve/skill-id/{skill_id}")]
+async fn get_by_skill_id(
     path: web::Path<String>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let post_id = path.into_inner();
+    let skill_id = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.filter(posts::post_id.eq(post_id)).first::<Post>(&mut conn) {
-        Ok(post) => Ok(HttpResponse::Ok().json(post)),
+    match skills::table.filter(skills::skill_id.eq(skill_id)).first::<Skill>(&mut conn) {
+        Ok(skill) => Ok(HttpResponse::Ok().json(skill)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
 }
 
-#[get("/blog/post/retrieve/{id}")]
-async fn get_post(
+#[get("/blog/skill/retrieve/id/{id}")]
+async fn get_skill(
     path: web::Path<i32>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
@@ -97,83 +99,83 @@ async fn get_post(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.find(id).first::<Post>(&mut conn) {
-        Ok(post) => Ok(HttpResponse::Ok().json(post)),
+    match skills::table.find(id).first::<Skill>(&mut conn) {
+        Ok(skill) => Ok(HttpResponse::Ok().json(skill)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
 }
 
-#[get("/blog/post/get/all")]
-async fn get_all_posts(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+#[get("/blog/skills/get/all")]
+async fn get_all_skills(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.load::<Post>(&mut conn) {
-        Ok(posts) => Ok(HttpResponse::Ok().json(posts)),
+    match skills::table.load::<Skill>(&mut conn) {
+        Ok(skills) => Ok(HttpResponse::Ok().json(skills)),
         Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-#[put("/blog/posts/update/{post_id}")]
-async fn update_post(
+#[put("/blog/skill/update/{skill_id}")]
+async fn update_skills(
     path: web::Path<String>,
-    post: web::Json<PostInput>,
+    skill: web::Json<SkillInput>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let post_id = path.into_inner();
-    let post_input = post.into_inner();
+    let skill_id = path.into_inner();
+    let skill_input = skill.into_inner();
 
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::update(posts::table.filter(posts::post_id.eq(post_id)))
+    match diesel::update(skills::table.filter(skills::skill_id.eq(skill_id)))
         .set((
-            posts::id.eq(post_input.id),
-            posts::post_id.eq(post_input.post_id),
-            posts::title.eq(post_input.title),
-            posts::body.eq(post_input.body),
+            skills::id.eq(skill_input.id),
+            skills::skill_id.eq(skill_input.skill_id),
+            skills::skill_name.eq(skill_input.skill_name),
+            skills::body.eq(skill_input.body),
         ))
         .execute(&mut conn)
     {
         Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => {
-            eprintln!("Error updating post: {:?}", e);
+            eprintln!("Error updating skill: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }
 }
 
 
-#[delete("/blog/post/single/{post_id}")]
-async fn delete_post(
-    path: web::Path<String>,  // Changed to String since post_id is a varchar
+#[delete("/blog/skill/single/{skill_id}")]
+async fn delete_skills(
+    path: web::Path<String>,  // Changed to String since skill_id is a varchar
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let post_id = path.into_inner();
+    let skill_id = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    // First, retrieve the title of the post before deleting it
-    let post_title =
-        posts::table
-            .filter(posts::post_id.eq(&post_id))
-            .select(posts::title)
+    // First, retrieve the skill name before deleting it
+    let skill_name =
+        skills::table
+            .filter(skills::skill_id.eq(&skill_id))
+            .select(skills::skill_name)
             .first::<String>(&mut conn)
             .optional()
             .map_err(|e| {
-                actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
+                actix_web::error::ErrorInternalServerError(format!("Error retrieving skill name: {}", e))
             })?;
 
-    match post_title {
-        Some(title) => {
-            // Now delete the post
-            match diesel::delete(posts::table.filter(posts::post_id.eq(&post_id))).execute(&mut conn) {
+    match skill_name {
+        Some(skill_name) => {
+            // Now delete the skill
+            match diesel::delete(skills::table.filter(skills::skill_id.eq(&skill_id))).execute(&mut conn) {
                 Ok(_) => {
                     let response_body = json!({
-                        "message": format!("Blog post '{}' has been deleted", title)
+                        "message": format!("Skill '{}' has been deleted", skill_name)
                     });
 
                     Ok(HttpResponse::Ok()
@@ -181,15 +183,15 @@ async fn delete_post(
                         .json(response_body))
                 }
                 Err(e) => {
-                    eprintln!("Error deleting post: {:?}", e);
+                    eprintln!("Error deleting skill: {:?}", e);
                     Ok(HttpResponse::InternalServerError().finish())
                 }
             }
         }
         None => {
-            // If no post with the given ID is found
+            // If no skill with the given ID is found
             let response_body = json!({
-                "error": format!("Blog post with ID '{}' not found", post_id)
+                "error": format!("Skill with ID '{}' not found", skill_id)
             });
 
             Ok(HttpResponse::NotFound()
@@ -199,35 +201,18 @@ async fn delete_post(
     }
 }
 
-#[delete("/blog/post/all")]
-async fn delete_all_posts(
+#[delete("/blog/skill/all")]
+async fn delete_all_skills_with_body(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
-        Ok(_) => Ok(HttpResponse::NoContent().finish()),
-        Err(e) => {
-            eprintln!("Error deleting posts: {:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
-    }
-}
-
-#[delete("/blog/post/all/message")]
-async fn delete_all_posts_with_body(
-    pool: web::Data<DbPool>,
-) -> Result<HttpResponse, Error> {
-    let mut conn = pool.get().map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
-    })?;
-
-    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
+    match diesel::sql_query("DELETE FROM skills").execute(&mut conn) {
         Ok(_) => {
             let response_body = json!({
-                "message": "All posts have been deleted."
+                "message": "All skills have been deleted."
             });
 
             Ok(HttpResponse::Ok()
@@ -235,7 +220,7 @@ async fn delete_all_posts_with_body(
                 .json(response_body))
         }
         Err(e) => {
-            eprintln!("Error deleting posts: {:?}", e);
+            eprintln!("Error deleting skills: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }

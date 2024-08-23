@@ -1,7 +1,7 @@
 use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 
-use crate::schema::posts;
+use crate::schemas::blog_schema::posts;
 
 #[derive(Insertable, Queryable, Serialize, Deserialize)]
 pub struct Post {
