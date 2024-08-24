@@ -104,6 +104,8 @@ pg_isready
 psql -U myuser -d postgres -h localhost -p 5432
 psql postgres://myuser:mypassword@localhost:5432/postgres
 
+psql postgres://test:test-password@localhost:5430/test_db
+
 ```
 
 psql -U test -d test_db -h localhost -p 5432
@@ -160,3 +162,15 @@ http POST localhost:8080/blog/worklog/create id:=1 worklog_id="1234abcd" work_ti
 
 
 http POST localhost:8080/blog/worklog/create id:=1 worklog_id="1234abcd" work_title="My First Worklog" body="This is the content of my worklog." time_created="2024-08-23T12:00:00" time_updated="2024-08-23T12:00:00"
+
+
+
+DO $$
+DECLARE
+r RECORD;
+BEGIN
+-- Loop over all tables
+FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP
+EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+END LOOP;
+END $$;
