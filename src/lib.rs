@@ -32,10 +32,10 @@ pub use schemas::blog_schema::posts;
 
 
 pub use controllers::skills_controller::{create_skill, get_skill, update_skills, delete_skills};
-pub use models::skills_models::{Skill, };
-pub use schemas::skills_schema::posts;
+pub use models::skills_models::{Skill, NewSkill};
+pub use schemas::skills_schema::skills;
 
 
-pub use controllers::worklog_controller::{crea, get_post, update_post, delete_post};
-pub use models::worklog_models::{Post, NewPost};
-pub use schemas::worklog_schema::posts;
+pub use controllers::worklog_controller::{create_worklog, get_worklog, get_all_worklog, get_by_worklog_id, delete_all_worklog, delete_worklog, delete_all_worklog_with_body};
+pub use models::worklog_models::{Worklog, NewWorklog};
+pub use schemas::worklog_schema::worklog;

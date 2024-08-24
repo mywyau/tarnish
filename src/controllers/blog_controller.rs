@@ -8,8 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 // Import schema
-use crate::blog_models::{NewPost, Post};
-use crate::blog_schema::posts;
+use crate::{posts, NewPost, Post};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -47,11 +46,12 @@ async fn create_post(
 ) -> Result<HttpResponse, Error> {
     let post_input = post.into_inner();
 
-    let new_post = NewPost {
-        post_id: post_input.post_id,
-        title: post_input.title,
-        body: post_input.body,
-    };
+    let new_post =
+        NewPost {
+            post_id: post_input.post_id,
+            title: post_input.title,
+            body: post_input.body,
+        };
 
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))

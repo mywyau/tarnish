@@ -146,3 +146,17 @@ diesel migration run
 
 ### Superuser
 psql -U postgres
+
+
+DROP TABLE IF EXISTS __diesel_schema_migrations CASCADE;
+
+
+
+
+http POST http://localhost:8080/blog/skill/create id:=1 skill_id="skill-001" skill_name="Rust Programming" body="Comprehensive skill in Rust programming."
+
+
+http POST localhost:8080/blog/worklog/create id:=1 worklog_id="1234abcd" work_title="My First Worklog" body="This is the content of my worklog." created_at="2024-08-23T12:00:00" updated_at="2024-08-23T12:00:00"
+
+
+http POST localhost:8080/blog/worklog/create id:=1 worklog_id="1234abcd" work_title="My First Worklog" body="This is the content of my worklog." time_created="2024-08-23T12:00:00" time_updated="2024-08-23T12:00:00"

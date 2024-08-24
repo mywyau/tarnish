@@ -7,6 +7,6 @@ table! {
         id -> Int4,
         post_id -> Varchar,
         title -> Varchar,
-        body -> Text,
+        body -> Text
     }
 }

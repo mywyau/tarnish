@@ -7,9 +7,8 @@ use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-// Import schema
 use crate::schemas::skills_schema::skills;
-use crate::Skill;
+use crate::{NewSkill, Skill};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -29,7 +28,6 @@ pub struct SkillInput {
 }
 
 impl SkillInput {
-    // Constructor method for creating a new SkillInput
     pub fn new(id: i32, skill_id: String, skill_name: String, body: String) -> Self {
         SkillInput {
             id,
@@ -48,8 +46,7 @@ async fn create_skill(
     let skill_input = skill.into_inner();
 
     let new_skill =
-        Skill {
-            id: skill_input.id,
+        NewSkill {
             skill_id: skill_input.skill_id,
             skill_name: skill_input.skill_name,
             body: skill_input.body,

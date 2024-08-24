@@ -1,63 +1,57 @@
 use std::env;
 
-use actix_web::{delete, get, worklog, put, web, Error, HttpResponse};
+use actix_web::{delete, get, post, put, web, Error, HttpResponse};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-// Import schema
-use crate::blog_models::{NewWorkLog, WorkLog};
-use crate::blog_schema::worklogs;
-
-pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-pub fn establish_connection() -> DbPool {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
-}
+use crate::connectors::postgres_connector::DbPool;
+use crate::models::worklog_models::NewWorklog;
+use crate::models::worklog_models::Worklog;
+use crate::worklog;
 
 #[derive(Serialize, Deserialize)]
-pub struct WorkLogInput {
+pub struct WorklogInput {
     pub id: i32,
     pub worklog_id: String,
     pub work_title: String,
-    pub title: String,
     pub body: String,
-    pub time_created: String,
-    pub time_updated: String
+    pub time_created: NaiveDateTime,  // Allow for optional input
+    pub time_updated: NaiveDateTime,  // Allow for optional input
 }
 
 
-
-impl WorkLogInput {
-    // Constructor method for creating a new WorkLogInput
-    pub fn new(id: i32, worklog_id: String, work_title: String, body: String, time_created:String, time_updated:String) -> Self {
-        WorkLogInput {
+impl WorklogInput {
+    // Constructor method for creating a new WorklogInput
+    pub fn new(id: i32, worklog_id: String, work_title: String, body: String, time_created: NaiveDateTime, time_updated: NaiveDateTime) -> Self {
+        WorklogInput {
             id,
             worklog_id,
             work_title,
             body,
             time_created,
-            time_updated
+            time_updated,
         }
     }
 }
 
-#[worklog("/blog/worklog/create")]
+
+#[post("/blog/worklog/create")]
 async fn create_worklog(
     pool: web::Data<DbPool>,
-    worklog: web::Json<WorkLogInput>,
+    worklog: web::Json<WorklogInput>,
 ) -> Result<HttpResponse, Error> {
     let worklog_input = worklog.into_inner();
 
-    let new_worklog = NewWorkLog {
+    let new_worklog = NewWorklog {
         worklog_id: worklog_input.worklog_id,
-        title: worklog_input.title,
+        worklog_title: worklog_input.work_title,
         body: worklog_input.body,
+        created_at: chrono::Utc::now().naive_utc(),
+        updated_at: chrono::Utc::now().naive_utc(),
     };
 
     let mut conn = pool.get().map_err(|e| {
@@ -66,9 +60,9 @@ async fn create_worklog(
 
     conn.transaction::<_, diesel::result::Error, _>(|conn| {
         // Insert the new worklog
-        diesel::insert_into(worklogs::table)
+        diesel::insert_into(worklog::table)
             .values(&new_worklog)
-            .get_result::<WorkLog>(conn)
+            .get_result::<Worklog>(conn)  // This can return the inserted record with the `id`
             .map_err(|e| {
                 eprintln!("Error inserting new worklog: {:?}", e);
                 e
@@ -87,7 +81,7 @@ async fn get_by_worklog_id(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match worklogs::table.filter(worklogs::worklog_id.eq(worklog_id)).first::<WorkLog>(&mut conn) {
+    match worklog::table.filter(worklog::worklog_id.eq(worklog_id)).first::<Worklog>(&mut conn) {
         Ok(worklog) => Ok(HttpResponse::Ok().json(worklog)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
@@ -103,28 +97,32 @@ async fn get_worklog(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match worklogs::table.find(id).first::<WorkLog>(&mut conn) {
+    match worklog::table.find(id).first::<Worklog>(&mut conn) {
         Ok(worklog) => Ok(HttpResponse::Ok().json(worklog)),
-        Err(_) => Ok(HttpResponse::NotFound().finish()),
+        Err(diesel::result::Error::NotFound) => Ok(HttpResponse::NotFound().finish()),
+        Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
+
 #[get("/blog/worklog/get/all")]
-async fn get_all_worklogs(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+async fn get_all_worklog(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+    // Get a connection from the pool
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match worklogs::table.load::<WorkLog>(&mut conn) {
+    // Query all worklogs from the database
+    match worklog::table.load::<Worklog>(&mut conn) {
         Ok(worklogs) => Ok(HttpResponse::Ok().json(worklogs)),
         Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
-#[put("/blog/worklogs/update/{worklog_id}")]
+#[put("/blog/worklog/update/{worklog_id}")]
 async fn update_worklog(
     path: web::Path<String>,
-    worklog: web::Json<WorkLogInput>,
+    worklog: web::Json<WorklogInput>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
     let worklog_id = path.into_inner();
@@ -134,12 +132,12 @@ async fn update_worklog(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::update(worklogs::table.filter(worklogs::worklog_id.eq(worklog_id)))
+    match diesel::update(worklog::table.filter(worklog::worklog_id.eq(worklog_id)))
         .set((
-            worklogs::id.eq(worklog_input.id),
-            worklogs::worklog_id.eq(worklog_input.worklog_id),
-            worklogs::title.eq(worklog_input.title),
-            worklogs::body.eq(worklog_input.body),
+            worklog::id.eq(worklog_input.id),
+            worklog::worklog_id.eq(worklog_input.worklog_id),
+            worklog::worklog_title.eq(worklog_input.work_title),
+            worklog::body.eq(worklog_input.body),
         ))
         .execute(&mut conn)
     {
@@ -164,9 +162,9 @@ async fn delete_worklog(
 
     // First, retrieve the title of the worklog before deleting it
     let worklog_title =
-        worklogs::table
-            .filter(worklogs::worklog_id.eq(&worklog_id))
-            .select(worklogs::title)
+        worklog::table
+            .filter(worklog::worklog_id.eq(&worklog_id))
+            .select(worklog::worklog_title)
             .first::<String>(&mut conn)
             .optional()
             .map_err(|e| {
@@ -176,7 +174,7 @@ async fn delete_worklog(
     match worklog_title {
         Some(title) => {
             // Now delete the worklog
-            match diesel::delete(worklogs::table.filter(worklogs::worklog_id.eq(&worklog_id))).execute(&mut conn) {
+            match diesel::delete(worklog::table.filter(worklog::worklog_id.eq(&worklog_id))).execute(&mut conn) {
                 Ok(_) => {
                     let response_body = json!({
                         "message": format!("Blog worklog '{}' has been deleted", title)
@@ -213,10 +211,10 @@ async fn delete_all_worklog(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::sql_query("DELETE FROM worklogs").execute(&mut conn) {
+    match diesel::sql_query("DELETE FROM worklog").execute(&mut conn) {
         Ok(_) => Ok(HttpResponse::NoContent().finish()),
         Err(e) => {
-            eprintln!("Error deleting worklogs: {:?}", e);
+            eprintln!("Error deleting worklog: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }
@@ -230,10 +228,10 @@ async fn delete_all_worklog_with_body(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::sql_query("DELETE FROM worklogs").execute(&mut conn) {
+    match diesel::sql_query("DELETE FROM worklog").execute(&mut conn) {
         Ok(_) => {
             let response_body = json!({
-                "message": "All worklogs have been deleted."
+                "message": "All worklog have been deleted."
             });
 
             Ok(HttpResponse::Ok()
@@ -241,7 +239,7 @@ async fn delete_all_worklog_with_body(
                 .json(response_body))
         }
         Err(e) => {
-            eprintln!("Error deleting worklogs: {:?}", e);
+            eprintln!("Error deleting worklog: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }

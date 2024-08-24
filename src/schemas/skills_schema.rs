@@ -7,6 +7,6 @@ table! {
         id -> Int4,
         skill_id -> Varchar,
         skill_name -> Varchar,
-        body -> Text,
+        body -> Text
     }
 }
