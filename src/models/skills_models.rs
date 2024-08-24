@@ -11,7 +11,7 @@ pub struct Skill {
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
-#[table_name = "skills"]
+#[diesel(table_name = skills)]
 pub struct NewSkill {
     pub skill_id: String,
     pub skill_name: String,

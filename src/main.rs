@@ -4,7 +4,7 @@ use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
 
-use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_all_posts_with_body, delete_post, establish_connection, get_all_posts, get_by_post_id, get_post, update_post};
+use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, establish_connection, get_all_posts, get_by_post_id, get_post, update_post};
 
 use tarnish::controllers::skills_controller::{
     create_skill, delete_skills, get_all_skills, get_skill, update_skills,
@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
             .service(update_post)
             .service(delete_post)
             .service(delete_all_posts)
-            .service(delete_all_posts_with_body)
+            // .service(delete_all_posts_with_body)
             // Worklog Endpoints
             .service(create_worklog)
             .service(get_worklog)

@@ -53,9 +53,10 @@ async fn create_post(
             body: post_input.body,
         };
 
-    let mut conn = pool.get().map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
-    })?;
+    let mut conn =
+        pool.get().map_err(|e| {
+            actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+        })?;
 
     conn.transaction::<_, diesel::result::Error, _>(|conn| {
         // Insert the new post
@@ -207,36 +208,43 @@ async fn delete_all_posts(
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
-        Ok(_) => Ok(HttpResponse::NoContent().finish()),
-        Err(e) => {
-            eprintln!("Error deleting posts: {:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
-        }
-    }
-}
-
-#[delete("/blog/post/all/message")]
-async fn delete_all_posts_with_body(
-    pool: web::Data<DbPool>,
-) -> Result<HttpResponse, Error> {
-    let mut conn = pool.get().map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
-    })?;
-
-    match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
+    match diesel::sql_query("TRUNCATE TABLE posts RESTART IDENTITY CASCADE").execute(&mut conn) {
         Ok(_) => {
             let response_body = json!({
                 "message": "All posts have been deleted."
             });
-
             Ok(HttpResponse::Ok()
                 .content_type("application/json")
                 .json(response_body))
         }
         Err(e) => {
-            eprintln!("Error deleting posts: {:?}", e);
+            eprintln!("Error truncating posts: {:?}", e);
             Ok(HttpResponse::InternalServerError().finish())
         }
     }
 }
+
+// #[delete("/blog/post/all/message")]
+// async fn delete_all_posts_with_body(
+//     pool: web::Data<DbPool>,
+// ) -> Result<HttpResponse, Error> {
+//     let mut conn = pool.get().map_err(|e| {
+//         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+//     })?;
+//
+//     match diesel::sql_query("DELETE FROM posts").execute(&mut conn) {
+//         Ok(_) => {
+//             let response_body = json!({
+//                 "message": "All posts have been deleted."
+//             });
+//
+//             Ok(HttpResponse::Ok()
+//                 .content_type("application/json")
+//                 .json(response_body))
+//         }
+//         Err(e) => {
+//             eprintln!("Error deleting posts: {:?}", e);
+//             Ok(HttpResponse::InternalServerError().finish())
+//         }
+//     }
+// }

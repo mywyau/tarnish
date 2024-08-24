@@ -16,7 +16,7 @@ use diesel::prelude::*;
 use diesel::Insertable;
 
 #[derive(Insertable)]
-#[table_name = "worklog"]
+#[diesel(table_name = worklog)]
 pub struct NewWorklog {
     pub worklog_id: String,
     pub worklog_title: String,

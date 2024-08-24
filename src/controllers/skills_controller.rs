@@ -102,7 +102,7 @@ async fn get_skill(
     }
 }
 
-#[get("/blog/skills/get/all")]
+#[get("/blog/skill/get/all")]
 async fn get_all_skills(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
