@@ -1257,6 +1257,7 @@ dependencies = [
  "actix-cors",
  "actix-rt",
  "actix-web",
+ "bytes",
  "chrono",
  "diesel",
  "dotenv",

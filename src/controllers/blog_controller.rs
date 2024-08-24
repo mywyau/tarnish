@@ -125,23 +125,55 @@ async fn update_post(
     let post_id = path.into_inner();
     let post_input = post.into_inner();
 
-    let mut conn = pool.get().map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
-    })?;
+    let mut conn =
+        pool.get().map_err(|e| {
+            actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+        })?;
 
-    match diesel::update(posts::table.filter(posts::post_id.eq(post_id)))
-        .set((
-            posts::id.eq(post_input.id),
-            posts::post_id.eq(post_input.post_id),
-            posts::title.eq(post_input.title),
-            posts::body.eq(post_input.body),
-        ))
-        .execute(&mut conn)
-    {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => {
-            eprintln!("Error updating post: {:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
+    // First, retrieve the title of the post before deleting it
+    let post_title =
+        posts::table
+            .filter(posts::post_id.eq(&post_id))
+            .select(posts::title)
+            .first::<String>(&mut conn)
+            .optional()
+            .map_err(|e| {
+                actix_web::error::ErrorInternalServerError(format!("Error retrieving post title: {}", e))
+            })?;
+
+    match post_title {
+        Some(title) => {
+            match diesel::update(posts::table.filter(posts::post_id.eq(post_id)))
+                .set((
+                    posts::id.eq(post_input.id),
+                    posts::post_id.eq(post_input.post_id),
+                    posts::title.eq(post_input.title),
+                    posts::body.eq(post_input.body),
+                ))
+                .execute(&mut conn)
+            {
+                Ok(_) => {
+                    let response_body =
+                        json!({"message": format!("Blog post '{}' has been updated", title)});
+                    Ok(HttpResponse::Ok()
+                        .content_type("application/json")
+                        .json(response_body))
+                }
+                Err(e) => {
+                    eprintln!("Error updating post: {:?}", e);
+                    Ok(HttpResponse::InternalServerError().finish())
+                }
+            }
+        }
+        None => {
+            // If no post with the given ID is found
+            let response_body = json!({
+                "error": format!("Blog post with ID '{}' not found", post_id)
+            });
+
+            Ok(HttpResponse::NotFound()
+                .content_type("application/json")
+                .json(response_body))
         }
     }
 }
@@ -153,9 +185,10 @@ async fn delete_post(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
     let post_id = path.into_inner();
-    let mut conn = pool.get().map_err(|e| {
-        actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
-    })?;
+    let mut conn =
+        pool.get().map_err(|e| {
+            actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
+        })?;
 
     // First, retrieve the title of the post before deleting it
     let post_title =
