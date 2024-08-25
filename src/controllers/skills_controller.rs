@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::schemas::skills_schema::skills;
-use crate::{NewSkill, Skill};
+use crate::{posts, NewSkill, Skill};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -43,6 +43,7 @@ async fn create_skill(
     pool: web::Data<DbPool>,
     skill: web::Json<SkillInput>,
 ) -> Result<HttpResponse, Error> {
+
     let skill_input = skill.into_inner();
 
     let new_skill =
@@ -75,12 +76,13 @@ async fn get_by_skill_id(
     path: web::Path<String>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let skill_id = path.into_inner();
+
+    let skill_id_path = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match skills::table.filter(skills::skill_id.eq(skill_id)).first::<Skill>(&mut conn) {
+    match skills::table.filter(skills::skill_id.eq(skill_id_path)).first::<Skill>(&mut conn) {
         Ok(skill) => Ok(HttpResponse::Ok().json(skill)),
         Err(_) => Ok(HttpResponse::NotFound().finish()),
     }
@@ -104,6 +106,7 @@ async fn get_skill(
 
 #[get("/blog/skill/get/all")]
 async fn get_all_skills(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
@@ -115,42 +118,76 @@ async fn get_all_skills(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> 
 }
 
 #[put("/blog/skill/update/{skill_id}")]
-async fn update_skills(
+async fn update_skill(
     path: web::Path<String>,
     skill: web::Json<SkillInput>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let skill_id = path.into_inner();
+
+    let skill_id_path = path.into_inner();
     let skill_input = skill.into_inner();
 
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match diesel::update(skills::table.filter(skills::skill_id.eq(skill_id)))
-        .set((
-            skills::id.eq(skill_input.id),
-            skills::skill_id.eq(skill_input.skill_id),
-            skills::skill_name.eq(skill_input.skill_name),
-            skills::body.eq(skill_input.body),
-        ))
-        .execute(&mut conn)
-    {
-        Ok(_) => Ok(HttpResponse::Ok().finish()),
-        Err(e) => {
-            eprintln!("Error updating skill: {:?}", e);
-            Ok(HttpResponse::InternalServerError().finish())
+    // First, retrieve the title of the post before deleting it
+    let skill_name =
+        skills::table
+            .filter(skills::skill_id.eq(&skill_id_path))
+            .select(skills::skill_name)
+            .first::<String>(&mut conn)
+            .optional()
+            .map_err(|e| {
+                actix_web::error::ErrorInternalServerError(format!("Error retrieving skill name: {}", e))
+            })?;
+
+    match skill_name {
+        Some(skill) => {
+            match diesel::update(skills::table.filter(skills::skill_id.eq(skill_id_path)))
+                .set((
+                    skills::id.eq(skill_input.id),
+                    skills::skill_id.eq(skill_input.skill_id),
+                    skills::skill_name.eq(skill_input.skill_name),
+                    skills::body.eq(skill_input.body),
+                ))
+                .execute(&mut conn)
+            {
+                Ok(_) => {
+                    let response_body =
+                        json!({"message": format!("Skill '{}' has been updated", skill)});
+                    Ok(HttpResponse::Ok()
+                        .content_type("application/json")
+                        .json(response_body))
+                }
+                Err(e) => {
+                    eprintln!("Error updating post: {:?}", e);
+                    Ok(HttpResponse::InternalServerError().finish())
+                }
+            }
+        }
+        None => {
+            // If no skill with the given ID is found
+            let response_body = json!({
+                "error": format!("Skill with ID '{}' not found", skill_id_path)
+            });
+
+            Ok(HttpResponse::NotFound()
+                .content_type("application/json")
+                .json(response_body))
         }
     }
+
 }
 
 
 #[delete("/blog/skill/single/{skill_id}")]
-async fn delete_skills(
+async fn delete_skill(
     path: web::Path<String>,  // Changed to String since skill_id is a varchar
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let skill_id = path.into_inner();
+
+    let skill_id_path = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
@@ -158,7 +195,7 @@ async fn delete_skills(
     // First, retrieve the skill name before deleting it
     let skill_name =
         skills::table
-            .filter(skills::skill_id.eq(&skill_id))
+            .filter(skills::skill_id.eq(&skill_id_path))
             .select(skills::skill_name)
             .first::<String>(&mut conn)
             .optional()
@@ -169,7 +206,7 @@ async fn delete_skills(
     match skill_name {
         Some(skill_name) => {
             // Now delete the skill
-            match diesel::delete(skills::table.filter(skills::skill_id.eq(&skill_id))).execute(&mut conn) {
+            match diesel::delete(skills::table.filter(skills::skill_id.eq(&skill_id_path))).execute(&mut conn) {
                 Ok(_) => {
                     let response_body = json!({
                         "message": format!("Skill '{}' has been deleted", skill_name)
@@ -188,7 +225,7 @@ async fn delete_skills(
         None => {
             // If no skill with the given ID is found
             let response_body = json!({
-                "error": format!("Skill with ID '{}' not found", skill_id)
+                "error": format!("Skill with ID '{}' not found", skill_id_path)
             });
 
             Ok(HttpResponse::NotFound()
@@ -199,9 +236,10 @@ async fn delete_skills(
 }
 
 #[delete("/blog/skill/all")]
-async fn delete_all_skills_with_body(
+async fn delete_all_skills(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
+
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;

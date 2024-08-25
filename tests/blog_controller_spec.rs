@@ -4,7 +4,7 @@ mod tests {
     use tarnish::connectors::postgres_connector::DbPool;
     use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, get_all_posts, get_by_post_id, update_post};
     use tarnish::schemas::blog_schema::posts;
-    use tarnish::{delete_all_worklog, NewPost, Post};
+    use tarnish::{NewPost, Post};
 
     use actix_web::{body::to_bytes, http::StatusCode, test, web, App};
     use bytes::Bytes;
@@ -24,9 +24,9 @@ mod tests {
             .execute(&mut conn)
             .expect("Failed to reset ID sequence");
 
-        diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1")
-            .execute(&mut conn)
-            .expect("Failed to reset ID sequence");
+        // diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1")
+        //     .execute(&mut conn)
+        //     .expect("Failed to reset ID sequence");
     }
 
     struct TestGuard {
@@ -72,7 +72,7 @@ mod tests {
     }
 
     #[actix_rt::test]
-    async fn run_all_tests_in_order() {
+    async fn run_all_tests_in_order_blog() {
         test_get_by_post_id().await;
         test_get_all_posts().await;
         test_create_post().await;
