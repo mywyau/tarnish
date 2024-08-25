@@ -24,9 +24,9 @@ mod tests {
             .execute(&mut conn)
             .expect("Failed to reset ID sequence");
 
-        diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1")
-            .execute(&mut conn)
-            .expect("Failed to reset ID sequence");
+        // diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1")
+        //     .execute(&mut conn)
+        //     .expect("Failed to reset ID sequence");
     }
 
     struct TestGuard {
@@ -379,8 +379,8 @@ mod tests {
 
         let delete_request =
             test::TestRequest::delete()
-            .uri("/blog/post/all")
-            .to_request();
+                .uri("/blog/post/all")
+                .to_request();
 
         let delete_response =
             test::call_service(&app, delete_request).await;
