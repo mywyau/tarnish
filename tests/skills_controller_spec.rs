@@ -4,7 +4,7 @@ mod tests {
     use tarnish::connectors::postgres_connector::DbPool;
     use tarnish::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};
     use tarnish::schemas::skills_schema::skills;
-    use tarnish::{delete_all_worklog, NewSkill, Skill};
+    use tarnish::{NewSkill, Skill};
 
     use actix_web::{body::to_bytes, http::StatusCode, test, web, App};
     use bytes::Bytes;
