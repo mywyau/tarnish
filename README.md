@@ -1,11 +1,5 @@
 # tarnish
 
-## To run the dependencies using Nix
-
-```
-nix-shell
-```
-
 ## To run the App
 
 ```
@@ -61,6 +55,7 @@ http GET http://localhost:8080/blog/post/get/all
 ### Getting a blog post by post_id
 ```
 http GET http://localhost:8080/blog/post/retrieve/some_string
+
 http GET http://localhost:8080/blog/post/retrieve/post-id/mikey-1
 ```
 
@@ -104,6 +99,8 @@ pg_isready
 psql -U myuser -d postgres -h localhost -p 5432
 psql postgres://myuser:mypassword@localhost:5432/postgres
 
+psql postgres://test:test-password@localhost:5430/test_db
+
 ```
 
 psql -U test -d test_db -h localhost -p 5432
@@ -146,3 +143,26 @@ diesel migration run
 
 ### Superuser
 psql -U postgres
+
+
+DROP TABLE IF EXISTS __diesel_schema_migrations CASCADE;
+
+
+http POST http://localhost:8080/blog/skill/create id:=1 skill_id="skill-001" skill_name="Rust Programming" body="Comprehensive skill in Rust programming."
+
+
+http POST localhost:8080/blog/worklog/create id:=1 worklog_id="1234abcd" work_title="My First Worklog" body="This is the content of my worklog." created_at="2024-08-23T12:00:00" updated_at="2024-08-23T12:00:00"
+
+
+http POST localhost:8080/blog/worklog/create id:=1 worklog_id="1234abcd" work_title="My First Worklog" body="This is the content of my worklog." time_created="2024-08-23T12:00:00" time_updated="2024-08-23T12:00:00"
+
+
+DO $$
+DECLARE
+r RECORD;
+BEGIN
+-- Loop over all tables
+FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP
+EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+END LOOP;
+END $$;

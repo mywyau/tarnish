@@ -1,30 +1,38 @@
-// src/schema.rs
+// @generated automatically by Diesel CLI.
 
-use diesel::table;
-
-table! {
+diesel::table! {
     posts (id) {
         id -> Int4,
         post_id -> Varchar,
         title -> Varchar,
         body -> Text,
+        created_at -> Nullable<Timestamptz>,
     }
 }
 
-table! {
+diesel::table! {
+    skills (id) {
+        id -> Int4,
+        skill_id -> Varchar,
+        skill_name -> Varchar,
+        body -> Text,
+        created_at -> Nullable<Timestamptz>,
+    }
+}
+
+diesel::table! {
     worklog (id) {
         id -> Int4,
-        task_id -> Varchar,
-        title -> Varchar,
+        worklog_id -> Varchar,
+        worklog_title -> Varchar,
         body -> Text,
+        created_at -> Nullable<Timestamptz>,
+        updated_at -> Nullable<Timestamptz>,
     }
 }
 
-// table! {
-//     test_posts (id) {
-//         id -> Int4,
-//         post_id -> Varchar,
-//         title -> Varchar,
-//         body -> Text,
-//     }
-// }
+diesel::allow_tables_to_appear_in_same_query!(
+    posts,
+    skills,
+    worklog,
+);

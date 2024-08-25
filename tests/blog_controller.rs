@@ -1,223 +1,488 @@
-use actix_web::{test, web, App};
-use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager, PooledConnection};
-use diesel::Connection;
-use dotenv::dotenv;
-use std::env;
+#[cfg(test)]
+mod tests {
+    use std::env;
+    // use std::iter::Once;
+    // use std::sync::{Once};
+    use tarnish::connectors::postgres_connector::DbPool;
+    use tarnish::schemas::blog_schema::posts;
 
-use tarnish::blog_controller::*;
-use tarnish::models::{NewPost, Post};
-// Use the correct path based on your project name in Cargo.toml
-use tarnish::schema::posts;
+    use actix_web::{test, web};
 
-use lazy_static::lazy_static;
-use std::sync::Mutex;
+    use diesel::prelude::*;
 
-lazy_static! {
-    static ref DB_MUTEX: Mutex<()> = Mutex::new(());
+    use diesel::r2d2::{ConnectionManager, PooledConnection};
+    use diesel::ExpressionMethods;
+    use diesel::{r2d2, PgConnection};
+    use dotenv::dotenv;
+
+    use tarnish::NewPost;
+
+    // static INIT: Once = Once::new();
+    struct TestGuard {
+        pool: web::Data<DbPool>,
+        post_ids: Vec<String>, // Store the post IDs for cleanup
+    }
+
+    impl TestGuard {
+        fn new(pool: web::Data<DbPool>, posts_to_insert: Vec<NewPost>) -> Self {
+            let mut conn: PooledConnection<ConnectionManager<PgConnection>> =
+                pool.get().expect("Failed to get connection from pool");
+
+            // Insert multiple posts into the database
+            for post in &posts_to_insert {
+                diesel::insert_into(posts::table)
+                    .values(post)
+                    .execute(&mut conn)
+                    .expect("Failed to insert test post");
+            }
+
+            // Collect the post IDs for cleanup
+            let post_ids = posts_to_insert.into_iter().map(|p| p.post_id).collect();
+
+            TestGuard { pool, post_ids }
+        }
+    }
+
+    impl Drop for TestGuard {
+        fn drop(&mut self) {
+            let mut conn: PooledConnection<ConnectionManager<PgConnection>> =
+                self.pool.get().expect("Failed to get connection from pool");
+
+            // Clean up: Delete the posts by their post_ids
+            for post_id in &self.post_ids {
+                diesel::delete(posts::table.filter(posts::post_id.eq(post_id)))
+                    .execute(&mut conn)
+                    .expect("Failed to delete test post");
+            }
+
+            // // Reset ID sequence
+            // diesel::sql_query("TRUNCATE TABLE posts RESTART IDENTITY CASCADE;")
+            //     .execute(&mut conn)
+            //     .expect("Failed to reset ID sequence");
+            //
+            // // Reset ID sequence
+            // diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1")
+            //     .execute(&mut conn)
+            //     .expect("Failed to reset ID sequence");
+        }
+    }
+
+    pub fn establish_connection() -> DbPool {
+        dotenv().ok();
+        let database_url = env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
+        let manager = ConnectionManager::<PgConnection>::new(database_url);
+        r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
+    }
+
+    mod create_post_tests {
+        use crate::tests::establish_connection;
+        use crate::tests::TestGuard;
+
+        use std::env;
+        use tarnish::connectors::postgres_connector::DbPool;
+        use tarnish::controllers::blog_controller::{
+            create_post,
+            delete_all_posts,
+            delete_post,
+            get_all_posts,
+            get_by_post_id,
+            get_post,
+            update_post,
+        };
+        use tarnish::models::blog_models::Post;
+        use tarnish::schemas::blog_schema::posts;
+
+        use actix_web::http::StatusCode;
+        use actix_web::{test, web, App};
+
+        use diesel::prelude::*;
+
+        use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+        use diesel::ExpressionMethods;
+        use diesel::{r2d2, PgConnection};
+        use dotenv::dotenv;
+        use serde_json::json;
+        use serde_json::Value;
+
+        use tarnish::NewPost;
+
+        #[actix_rt::test]
+        async fn test_create_post() {
+            dotenv::from_filename(".env.test").ok();
+
+            let pool = web::Data::new(establish_connection());
+
+            // Define multiple posts to insert before the test
+            let posts_to_insert =
+                vec![
+                    NewPost {
+                        post_id: "abc123".to_string(),
+                        title: "Test Post 1".to_string(),
+                        body: "This is the first test post.".to_string(),
+                    },
+                    NewPost {
+                        post_id: "def456".to_string(),
+                        title: "Test Post 2".to_string(),
+                        body: "This is the second test post.".to_string(),
+                    },
+                ];
+
+            // Create the guard to insert data and perform cleanup after the test
+            let _guard = TestGuard::new(pool.clone(), posts_to_insert);
+
+            let mut app =
+                test::init_service(
+                    App::new()
+                        .app_data(pool.clone())
+                        .service(get_by_post_id)
+                        .service(create_post)
+                ).await;
+
+            // First, create a post to ensure there is something to retrieve
+            let payload =
+                json!({
+                "id": 200,
+                "post_id": "abc200",
+                "title": "Test Post",
+                "body": "This is a test post."
+            });
+
+            let create_req =
+                test::TestRequest::post()
+                    .uri("/blog/post/create")
+                    .set_json(&payload)
+                    .to_request();
+
+            let create_resp = test::call_service(&mut app, create_req).await;
+
+            assert_eq!(create_resp.status(), StatusCode::CREATED);
+
+            let body = test::read_body(create_resp).await;
+
+            let body_str = std::str::from_utf8(&body).unwrap();
+
+            let json_body: Value = serde_json::from_str(body_str).unwrap();
+
+            // let expected_json: Value =
+            //     serde_json::json!({
+            //         "body": "This is a test post.",
+            //         "id": 2,
+            //         "post_id": "abc200",
+            //         "title": "Test Post"
+            //     });
+
+            // assert_eq!(json_body, expected_json);
+
+            // Extract the post_id from the JSON response
+            let post_id = json_body.get("post_id").unwrap().as_str().unwrap();
+
+            // Assert that the post_id is what you expect
+            assert_eq!(post_id, "abc200");
+        }
+    }
+
+    mod get_by_post_id_test {
+        use crate::tests::establish_connection;
+        use crate::tests::TestGuard;
+
+        use std::env;
+        use tarnish::connectors::postgres_connector::DbPool;
+        use tarnish::controllers::blog_controller::{
+            create_post,
+            delete_all_posts,
+            delete_post,
+            get_all_posts,
+            get_by_post_id,
+            get_post,
+            update_post,
+        };
+        use tarnish::models::blog_models::Post;
+
+        use actix_web::http::StatusCode;
+        use diesel::prelude::*;
+
+        use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+        use diesel::ExpressionMethods;
+        use diesel::{r2d2, PgConnection};
+        use dotenv::dotenv;
+        use serde_json::json;
+        use serde_json::Value;
+
+        use tarnish::NewPost;
+
+        use actix_web::body::to_bytes;
+        use actix_web::{test, web, App};
+        use bytes::Bytes;
+
+        #[actix_rt::test]
+        async fn test_get_by_post_id() {
+            dotenv::from_filename(".env.test").ok();
+            let pool = web::Data::new(establish_connection());
+
+            // Define multiple posts to insert before the test
+            let posts_to_insert = vec![
+                NewPost {
+                    post_id: "abc123".to_string(),
+                    title: "Test Post 1".to_string(),
+                    body: "This is the first test post.".to_string(),
+                },
+                NewPost {
+                    post_id: "def456".to_string(),
+                    title: "Test Post 2".to_string(),
+                    body: "This is the second test post.".to_string(),
+                },
+            ];
+
+            // Create the guard to insert data and perform cleanup after the test
+            let _guard = TestGuard::new(pool.clone(), posts_to_insert);
+
+            let mut app = test::init_service(
+                App::new()
+                    .app_data(pool.clone())
+                    .service(get_by_post_id)
+                    .service(create_post)
+            ).await;
+
+            // Now, try to retrieve the first post by its ID
+            let req = test::TestRequest::get()
+                .uri("/blog/post/retrieve/post-id/def456")
+                .to_request();
+
+            let resp = test::call_service(&mut app, req).await;
+
+            // Extract the status before resp is moved
+            let status = resp.status();
+
+            // Correctly read the body
+            let body: Bytes = to_bytes(resp.into_body()).await.unwrap();
+
+            // Assert that the status is success
+            assert!(status.is_success());
+
+            // Convert the body to a string
+            let body_str = std::str::from_utf8(&body).unwrap();
+
+            // Optionally, if you expect JSON and want to compare JSON structures
+            let json_body: Value = serde_json::from_str(body_str).unwrap();
+
+            // Extract the post_id from the JSON response
+            let post_id_field = json_body.get("post_id").unwrap().as_str().unwrap();
+            let title_field = json_body.get("title").unwrap().as_str().unwrap();
+            let body_field = json_body.get("body").unwrap().as_str().unwrap();
+
+            // Assert that the fields are what you expect
+            assert_eq!(post_id_field, "def456");
+            assert_eq!(title_field, "Test Post 2");
+            assert_eq!(body_field, "This is the second test post.");
+        }
+    }
+
+    mod update_post_test {
+        use crate::tests::establish_connection;
+        use crate::tests::TestGuard;
+
+        use std::env;
+        use tarnish::connectors::postgres_connector::DbPool;
+        use tarnish::controllers::blog_controller::{
+            create_post,
+            delete_all_posts,
+            delete_post,
+            get_all_posts,
+            get_by_post_id,
+            get_post,
+            update_post,
+        };
+        use tarnish::models::blog_models::Post;
+        use tarnish::schemas::blog_schema::posts;
+
+        use actix_web::http::StatusCode;
+        use actix_web::{test, web, App};
+        use actix_web::body::to_bytes;
+        use bytes::Bytes;
+        use diesel::prelude::*;
+
+        use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+        use diesel::ExpressionMethods;
+        use diesel::{r2d2, PgConnection};
+        use dotenv::dotenv;
+        use serde_json::json;
+        use serde_json::Value;
+
+        use tarnish::NewPost;
+
+        #[actix_rt::test]
+        async fn test_update_post() {
+            // Step 1: Establish connection to the database and initialize the service
+            let pool = web::Data::new(establish_connection());
+
+            let mut app = test::init_service(
+                App::new()
+                    .app_data(pool.clone())
+                    .service(update_post)
+                    .service(get_by_post_id)
+            )
+                .await;
+
+            // Step 2: Insert a post into the database
+            let posts_to_insert = vec![
+                NewPost {
+                    post_id: "abc888".to_string(),
+                    title: "Test Post 1".to_string(),
+                    body: "This is the first test post.".to_string(),
+                },
+            ];
+
+            let _guard = TestGuard::new(pool.clone(), posts_to_insert);
+
+            // Step 3: Prepare the update payload
+            let payload = json!({
+        "id": 1,
+        "post_id": "abc888",
+        "title": "Updated Title",
+        "body": "Updated body content."
+    });
+
+            // Step 4: Send the PUT request to update the post
+            let put_req = test::TestRequest::put()
+                .uri("/blog/posts/update/abc888")
+                .set_json(&payload)
+                .to_request();
+
+            let put_resp = test::call_service(&mut app, put_req).await;
+
+            // Step 5: Assert that the update was successful
+            assert!(put_resp.status().is_success());
+
+            // Step 6: Read and parse the response body
+            let body: Bytes = to_bytes(put_resp.into_body()).await.unwrap();
+            let body_str = std::str::from_utf8(&body).unwrap();
+            let json_body: Value = serde_json::from_str(body_str).unwrap();
+
+            // Step 7: Assert that the response contains the correct update message
+            let expected_message = json!({
+        "message": "Blog post 'Test Post 1' has been updated"
+    });
+            assert_eq!(json_body, expected_message);
+
+            // Optionally: Retrieve the updated post to ensure changes were applied correctly
+            let get_req = test::TestRequest::get()
+                .uri("/blog/post/retrieve/post-id/abc888")
+                .to_request();
+
+            let get_resp = test::call_service(&mut app, get_req).await;
+            assert!(get_resp.status().is_success());
+
+            let get_body: Bytes = to_bytes(get_resp.into_body()).await.unwrap();
+            let get_body_str = std::str::from_utf8(&get_body).unwrap();
+            let updated_post: Value = serde_json::from_str(get_body_str).unwrap();
+
+            let expected_updated_post = json!({
+        "id": 1,
+        "post_id": "abc888",
+        "title": "Updated Title",
+        "body": "Updated body content."
+    });
+
+            assert_eq!(updated_post, expected_updated_post);
+        }
+
+
+    }
+
+
+// mod delete_post_tests {
+//     use crate::tests::establish_connection;
+//     use crate::tests::TestGuard;
+    //
+    //     use std::env;
+    //     use tarnish::connectors::postgres_connector::DbPool;
+    //     use tarnish::controllers::blog_controller::{
+    //         create_post,
+    //         delete_all_posts,
+    //         delete_post,
+    //         get_all_posts,
+    //         get_by_post_id,
+    //         get_post,
+    //         update_post,
+    //     };
+    //     use tarnish::models::blog_models::Post;
+    //     use tarnish::schemas::blog_schema::posts;
+    //
+    //     use actix_web::http::StatusCode;
+    //     use actix_web::{test, web, App};
+    //
+    //     use diesel::prelude::*;
+    //
+    //     use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+    //     use diesel::ExpressionMethods;
+    //     use diesel::{r2d2, PgConnection};
+    //     use dotenv::dotenv;
+    //     use serde_json::json;
+    //     use serde_json::Value;
+    //
+    //     use tarnish::NewPost;
+    //
+    //     #[actix_rt::test]
+    //     async fn test_delete_post() {
+    //         dotenv::from_filename(".env.test").ok();
+    //         let pool = web::Data::new(establish_connection());
+    //
+    //         // Define multiple posts to insert before the test
+    //         let posts_to_insert = vec![
+    //             NewPost {
+    //                 post_id: "abc200".to_string(),
+    //                 title: "Test Post 1".to_string(),
+    //                 body: "This is the first test post.".to_string(),
+    //             },
+    //             NewPost {
+    //                 post_id: "def456".to_string(),
+    //                 title: "Test Post 2".to_string(),
+    //                 body: "This is the second test post.".to_string(),
+    //             },
+    //         ];
+    //
+    //         // Create the guard to insert data and perform cleanup after the test
+    //         let _guard = TestGuard::new(pool.clone(), posts_to_insert);
+    //
+    //         let mut app =
+    //             test::init_service(
+    //                 App::new()
+    //                     .app_data(pool.clone())
+    //                     .service(delete_post)
+    //                     .service(create_post)
+    //             ).await;
+    //
+    //         // Clean up: Delete the post by post_id
+    //         let mut conn: PooledConnection<ConnectionManager<PgConnection>> =
+    //             pool.get().expect("Failed to get connection from pool");
+    //
+    //         let delete_request =
+    //             test::TestRequest::delete()
+    //                 .uri("/blog/post/single/abc200")
+    //                 .to_request();
+    //
+    //         let delete_response =
+    //             test::call_service(&mut app, delete_request).await;
+    //
+    //         assert!(delete_response.status().is_success());
+    //
+    //         // Optionally verify the deletion
+    //         let deleted_post = posts::table
+    //             .filter(posts::post_id.eq("abc200"))
+    //             .first::<Post>(&mut conn)
+    //             .optional()
+    //             .expect("Failed to check for deleted post");
+    //
+    //         assert!(deleted_post.is_none());
+    //
+    //         // Optionally verify the deletion
+    //         let deleted_post = posts::table
+    //             .filter(posts::post_id.eq("def456"))
+    //             .first::<Post>(&mut conn)
+    //             .optional()
+    //             .expect("Failed to check for deleted post");
+    //
+    //         assert!(deleted_post.is_none());
+    //     }
+    // }
 }
-
-type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-fn reset_database(conn: &mut PgConnection) {
-    println!("Resetting database...");
-    diesel::sql_query("TRUNCATE TABLE posts RESTART IDENTITY;")
-        .execute(conn)
-        .expect("Failed to reset database");
-    println!("Database reset completed.");
-}
-
-fn delete_posts_by_ids(conn: &mut PgConnection, ids: Vec<i32>) {
-    println!("Deleting specific posts...");
-
-    // Convert the list of IDs into a comma-separated string
-    let id_list = ids.into_iter().map(|id| id.to_string()).collect::<Vec<String>>().join(",");
-
-    // Execute the DELETE SQL command to remove the specific posts
-    let query = format!("DELETE FROM posts WHERE id IN ({})", id_list);
-    diesel::sql_query(query)
-        .execute(conn)
-        .expect("Failed to delete specific posts");
-
-    println!("Posts deleted.");
-}
-
-
-fn setup_test_db() -> DbPool {
-    dotenv().ok();
-    let database_url = env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
-}
-
-fn setup() -> (DbPool, PooledConnection<ConnectionManager<PgConnection>>) {
-    let pool = setup_test_db();
-    let mut conn = pool.get().expect("Couldn't get db connection");
-
-    // Lock the mutex and handle PoisonError
-    let _lock = DB_MUTEX.lock().unwrap_or_else(|e| e.into_inner());
-
-    // Reset the database before running the test
-    reset_database(&mut conn);
-
-    // Mutex lock will be automatically released when `_lock` goes out of scope
-    (pool, conn)
-}
-
-
-#[actix_rt::test]
-async fn test_create_post() {
-    // Lock the mutex to ensure only one test accesses the database at a time
-    let _lock = DB_MUTEX.lock().unwrap();
-
-    let pool = setup_test_db();
-    let mut conn = pool.get().expect("Couldn't get db connection");
-
-    let new_post = Post {
-        id: 1,
-        post_id: "test_post_1".into(),
-        title: "Test Post".into(),
-        body: "This is a test post.".into(),
-    };
-
-    let app = test::init_service(App::new().app_data(web::Data::new(pool.clone())).service(create_post)).await;
-
-    let req = test::TestRequest::post()
-        .uri("/blog/post/create")
-        .set_json(&new_post)
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 201);
-
-    let result: Post = test::read_body_json(resp).await;
-    assert_eq!(result.post_id, "test_post_1");
-
-    delete_posts_by_ids(&mut conn, vec![1]);
-
-    // The mutex lock is automatically released here when `_lock` goes out of scope
-}
-
-#[actix_rt::test]
-async fn test_update_post() {
-    // Lock the mutex to ensure only one test accesses the database at a time
-    let _lock = DB_MUTEX.lock().unwrap();
-
-    let pool = setup_test_db();
-    let mut conn = pool.get().expect("Couldn't get db connection");
-
-    // Insert a post to be updated
-    diesel::insert_into(posts::table)
-        .values(&Post {
-            id: 2,
-            post_id: "test_post_2".into(),
-            title: "Test Post".into(),
-            body: "This is a test post.".into(),
-        })
-        .execute(&mut conn)
-        .expect("Error inserting test post");
-
-    let updated_post = PostInput {
-        id: 2,
-        post_id: "test_post_2".into(),
-        title: "Updated Post".into(),
-        body: "This post has been updated.".into(),
-    };
-
-    let app = test::init_service(App::new().app_data(web::Data::new(pool.clone())).service(update_post)).await;
-
-    let req = test::TestRequest::put()
-        .uri("/blog/posts/update/test_post_2")
-        .set_json(&updated_post)
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200);
-
-    // Verify the update
-    let updated_post: Post =
-        posts::table.filter(posts::post_id.eq("test_post_2"))
-            .first(&mut conn)
-            .expect("Post not found");
-
-    assert_eq!(updated_post.title, "Updated Post");
-
-    delete_posts_by_ids(&mut conn, vec![2]);
-
-    // The mutex lock is automatically released here when `_lock` goes out of scope
-}
-
-#[actix_rt::test]
-async fn test_delete_post() {
-    // Lock the mutex to ensure only one test accesses the database at a time
-    let _lock = DB_MUTEX.lock().unwrap();
-
-    let pool = setup_test_db();
-    let mut conn = pool.get().expect("Couldn't get db connection");
-
-    // Insert a post to be deleted
-    diesel::insert_into(posts::table)
-        .values(&Post {
-            id: 3,
-            post_id: "test_post_3".into(),
-            title: "Test Post".into(),
-            body: "This is a test post.".into(),
-        })
-        .execute(&mut conn)
-        .expect("Error inserting test post");
-
-    let app = test::init_service(App::new().app_data(web::Data::new(pool.clone())).service(delete_post)).await;
-
-    let req = test::TestRequest::delete()
-        .uri("/blog/post/single/test_post_3")
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200);
-
-    // Verify the post was deleted
-    let deleted_post: Result<Post, _> = posts::table.filter(posts::post_id.eq("test_post_3"))
-        .first(&mut conn);
-
-    assert!(deleted_post.is_err());
-
-    // The mutex lock is automatically released here when `_lock` goes out of scope
-}
-
-#[actix_rt::test]
-async fn test_get_all_posts() {
-    // Setup with Mutex lock to ensure serialized access to the database
-    let (pool, mut conn) = setup();
-
-    // Insert some posts
-    diesel::insert_into(posts::table)
-        .values(&vec![
-            Post {
-                id: 4,
-                post_id: "post_4".into(),
-                title: "First Post".into(),
-                body: "This is the first test post.".into(),
-            },
-            Post {
-                id: 5,
-                post_id: "post_5".into(),
-                title: "Second Post".into(),
-                body: "This is the second test post.".into(),
-            },
-        ])
-        .execute(&mut conn)
-        .expect("Error inserting test posts");
-
-    let app = test::init_service(App::new().app_data(web::Data::new(pool.clone())).service(get_all_posts)).await;
-
-    let req = test::TestRequest::get()
-        .uri("/blog/post/retrieve/all")
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 200);
-
-    let result: Vec<Post> = test::read_body_json(resp).await;
-    assert_eq!(result.len(), 2);
-}
-
