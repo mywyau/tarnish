@@ -72,7 +72,7 @@ mod tests {
     }
 
     #[actix_rt::test]
-    async fn run_all_tests_in_order() {
+    async fn run_all_tests_in_order_blog() {
         test_get_by_post_id().await;
         test_get_all_posts().await;
         test_create_post().await;

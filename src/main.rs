@@ -7,7 +7,7 @@ use dotenv::dotenv;
 use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, establish_connection, get_all_posts, get_by_post_id, get_post, update_post};
 
 use tarnish::controllers::skills_controller::{
-    create_skill, delete_skills, get_all_skills, get_skill, update_skills,
+    create_skill, delete_skill, get_all_skills, get_skill, update_skill,
 };
 use tarnish::controllers::worklog_controller::{
     create_worklog, delete_worklog, get_all_worklog, get_worklog, update_worklog,
@@ -56,8 +56,8 @@ async fn main() -> std::io::Result<()> {
             // Skills Endpoints
             .service(create_skill)
             .service(get_skill)
-            .service(update_skills)
-            .service(delete_skills)
+            .service(update_skill)
+            .service(delete_skill)
             .service(get_all_skills)
     })
         .bind(format!("0.0.0.0:{}", port))?

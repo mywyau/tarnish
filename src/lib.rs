@@ -31,7 +31,7 @@ pub use models::blog_models::{Post, NewPost};
 pub use schemas::blog_schema::posts;
 
 
-pub use controllers::skills_controller::{create_skill, get_skill, update_skills, delete_skills};
+pub use controllers::skills_controller::{create_skill, get_skill, update_skill, delete_skill};
 pub use models::skills_models::{Skill, NewSkill};
 pub use schemas::skills_schema::skills;
 
