@@ -178,7 +178,6 @@ async fn update_post(
     }
 }
 
-
 #[delete("/blog/post/single/{post_id}")]
 async fn delete_post(
     path: web::Path<String>,  // Changed to String since post_id is a varchar

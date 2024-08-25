@@ -16,8 +16,6 @@ mod tests {
     use dotenv::dotenv;
 
     use tarnish::NewPost;
-
-    // static INIT: Once = Once::new();
     struct TestGuard {
         pool: web::Data<DbPool>,
         post_ids: Vec<String>, // Store the post IDs for cleanup
@@ -295,9 +293,9 @@ mod tests {
         use tarnish::models::blog_models::Post;
         use tarnish::schemas::blog_schema::posts;
 
+        use actix_web::body::to_bytes;
         use actix_web::http::StatusCode;
         use actix_web::{test, web, App};
-        use actix_web::body::to_bytes;
         use bytes::Bytes;
         use diesel::prelude::*;
 
@@ -385,104 +383,130 @@ mod tests {
 
             assert_eq!(updated_post, expected_updated_post);
         }
-
-
     }
 
-
-// mod delete_post_tests {
-//     use crate::tests::establish_connection;
-//     use crate::tests::TestGuard;
-    //
-    //     use std::env;
-    //     use tarnish::connectors::postgres_connector::DbPool;
-    //     use tarnish::controllers::blog_controller::{
-    //         create_post,
-    //         delete_all_posts,
-    //         delete_post,
-    //         get_all_posts,
-    //         get_by_post_id,
-    //         get_post,
-    //         update_post,
-    //     };
-    //     use tarnish::models::blog_models::Post;
-    //     use tarnish::schemas::blog_schema::posts;
-    //
-    //     use actix_web::http::StatusCode;
+    // #[cfg(test)]
+    // mod delete_tests {
+    //     use super::*;
     //     use actix_web::{test, web, App};
-    //
+    //     use diesel::connection::SimpleConnection;
     //     use diesel::prelude::*;
-    //
-    //     use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
-    //     use diesel::ExpressionMethods;
-    //     use diesel::{r2d2, PgConnection};
-    //     use dotenv::dotenv;
+    //     use mockall::{automock, predicate::*};
+    //     use mockall::mock;
     //     use serde_json::json;
-    //     use serde_json::Value;
     //
-    //     use tarnish::NewPost;
+    //     // Mock the connection
+    //     mock! {
+    //     pub Conn {}
+    //
+    //     impl SimpleConnection for Conn {
+    //         fn batch_execute(&self, query: &str) -> QueryResult<()>;
+    //     }
+    //
+    //     impl Connection for Conn {
+    //         type Backend = diesel::pg::Pg;
+    //         type TransactionManager = diesel::connection::AnsiTransactionManager;
+    //
+    //         fn establish(database_url: &str) -> ConnectionResult<Self> where Self: Sized;
+    //         fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize> where T: diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + ?Sized;
+    //         fn transaction_manager(&self) -> &Self::TransactionManager;
+    //     }
+    // }
+    //
+    //     // Mocking the posts schema
+    //     mod posts {
+    //         use diesel::table;
+    //
+    //         table! {
+    //         posts (id) {
+    //             id -> Int4,
+    //             post_id -> Varchar,
+    //             title -> Varchar,
+    //             body -> Text,
+    //         }
+    //     }
+    //     }
     //
     //     #[actix_rt::test]
-    //     async fn test_delete_post() {
-    //         dotenv::from_filename(".env.test").ok();
-    //         let pool = web::Data::new(establish_connection());
+    //     async fn test_delete_post_success() {
+    //         // Mock the connection pool and connection
+    //         let mut mock_conn = MockConn::new();
+    //         let post_id = "abc123".to_string();
     //
-    //         // Define multiple posts to insert before the test
-    //         let posts_to_insert = vec![
-    //             NewPost {
-    //                 post_id: "abc200".to_string(),
-    //                 title: "Test Post 1".to_string(),
-    //                 body: "This is the first test post.".to_string(),
-    //             },
-    //             NewPost {
-    //                 post_id: "def456".to_string(),
-    //                 title: "Test Post 2".to_string(),
-    //                 body: "This is the second test post.".to_string(),
-    //             },
-    //         ];
+    //         // Set up the expectations for the mocked methods
+    //         mock_conn
+    //             .expect_execute_returning_count()
+    //             .with(predicate::always())
+    //             .returning(|_| Ok(1));
     //
-    //         // Create the guard to insert data and perform cleanup after the test
-    //         let _guard = TestGuard::new(pool.clone(), posts_to_insert);
+    //         mock_conn
+    //             .expect_batch_execute()
+    //             .returning(|_| Ok(()));
     //
-    //         let mut app =
-    //             test::init_service(
-    //                 App::new()
-    //                     .app_data(pool.clone())
-    //                     .service(delete_post)
-    //                     .service(create_post)
-    //             ).await;
+    //         mock_conn
+    //             .expect_transaction_manager()
+    //             .return_const(diesel::connection::AnsiTransactionManager::new());
     //
-    //         // Clean up: Delete the post by post_id
-    //         let mut conn: PooledConnection<ConnectionManager<PgConnection>> =
-    //             pool.get().expect("Failed to get connection from pool");
+    //         // Simulate the DB response for finding a post
+    //         mock_conn
+    //             .expect_query_by_index::<String>()
+    //             .with(predicate::eq(posts::posts::title))
+    //             .returning(|_| Ok(Some("Test Title".to_string())));
     //
-    //         let delete_request =
-    //             test::TestRequest::delete()
-    //                 .uri("/blog/post/single/abc200")
-    //                 .to_request();
+    //         let pool = web::Data::new(MockConnManager { conn: mock_conn });
     //
-    //         let delete_response =
-    //             test::call_service(&mut app, delete_request).await;
+    //         let req = test::TestRequest::delete()
+    //             .uri(&format!("/blog/post/single/{}", post_id))
+    //             .to_request();
     //
-    //         assert!(delete_response.status().is_success());
+    //         let mut app = test::init_service(App::new().app_data(pool.clone()).service(delete_post)).await;
     //
-    //         // Optionally verify the deletion
-    //         let deleted_post = posts::table
-    //             .filter(posts::post_id.eq("abc200"))
-    //             .first::<Post>(&mut conn)
-    //             .optional()
-    //             .expect("Failed to check for deleted post");
+    //         let resp = test::call_service(&mut app, req).await;
+    //         assert!(resp.status().is_success());
     //
-    //         assert!(deleted_post.is_none());
+    //         let body = test::read_body(resp).await;
+    //         let body_str = std::str::from_utf8(&body).unwrap();
+    //         let json_body: serde_json::Value = serde_json::from_str(body_str).unwrap();
     //
-    //         // Optionally verify the deletion
-    //         let deleted_post = posts::table
-    //             .filter(posts::post_id.eq("def456"))
-    //             .first::<Post>(&mut conn)
-    //             .optional()
-    //             .expect("Failed to check for deleted post");
+    //         let expected_body = json!({
+    //         "message": format!("Blog post '{}' has been deleted", "Test Title")
+    //     });
     //
-    //         assert!(deleted_post.is_none());
+    //         assert_eq!(json_body, expected_body);
+    //     }
+    //
+    //     #[actix_rt::test]
+    //     async fn test_delete_post_not_found() {
+    //         // Mock the connection pool and connection
+    //         let mut mock_conn = MockConn::new();
+    //         let post_id = "abc123".to_string();
+    //
+    //         // Simulate the DB response for not finding a post
+    //         mock_conn
+    //             .expect_query_by_index::<String>()
+    //             .with(predicate::eq(posts::posts::title))
+    //             .returning(|_| Ok(None));
+    //
+    //         let pool = web::Data::new(MockConnManager { conn: mock_conn });
+    //
+    //         let req = test::TestRequest::delete()
+    //             .uri(&format!("/blog/post/single/{}", post_id))
+    //             .to_request();
+    //
+    //         let mut app = test::init_service(App::new().app_data(pool.clone()).service(delete_post)).await;
+    //
+    //         let resp = test::call_service(&mut app, req).await;
+    //         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    //
+    //         let body = test::read_body(resp).await;
+    //         let body_str = std::str::from_utf8(&body).unwrap();
+    //         let json_body: serde_json::Value = serde_json::from_str(body_str).unwrap();
+    //
+    //         let expected_body = json!({
+    //         "error": format!("Blog post with ID '{}' not found", post_id)
+    //     });
+    //
+    //         assert_eq!(json_body, expected_body);
     //     }
     // }
 }
