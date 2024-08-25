@@ -1,0 +1,182 @@
+name: CI Pipeline
+
+on: [push]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Install Docker Compose
+      - name: Install Docker Compose
+        run: |
+          DOCKER_COMPOSE_VERSION=1.29.2
+          sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      # Checkout repositories
+      - name: Checkout backend repository
+        uses: actions/checkout@v2
+        with:
+          path: backend-repo
+
+      - name: Checkout repositories
+        uses: actions/checkout@v2
+        with:
+          repository: mywyau/blog
+          path: my-blog
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout Selenium tests repository
+        uses: actions/checkout@v2
+        with:
+          repository: mywyau/concurrent_ui-tests
+          path: selenium-tests-repo
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      # Cache Docker layers
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      # Create Docker Compose file
+      - name: Create Docker Compose file
+        run: |
+          echo "version: '3.8'
+
+          services:
+            postgres:
+              image: postgres:14
+              environment:
+                POSTGRES_USER: myuser
+                POSTGRES_PASSWORD: mypassword
+                POSTGRES_DB: postgres
+              ports:
+                - '5432:5432'
+              volumes:
+                - pgdata:/var/lib/postgresql/data
+          
+            postgres-test:
+              image: postgres:14
+              environment:
+                POSTGRES_USER: test
+                POSTGRES_PASSWORD: test-password
+                POSTGRES_DB: test_db
+              ports:
+                - '5430:5432'
+              volumes:
+                - pgdata:/var/lib/postgresql/data
+          
+            backend:
+              build:
+                context: ./backend-repo
+              environment:
+                DATABASE_URL: postgres://myuser:mypassword@postgres:5432/postgres
+              depends_on:
+                - postgres
+              ports:
+                - '8080:8080'
+
+            frontend:
+              build:
+                context: ./my-blog/my-blog
+              environment:
+                REACT_APP_API_BASE_URL: http://backend:8080
+              depends_on:
+                - backend
+              ports:
+                - '3000:3000'
+
+            selenium:
+              image: selenium/standalone-chrome:latest
+              volumes:
+                - /dev/shm:/dev/shm
+              ports:
+                - "4444:4444"
+
+            selenium-tests:
+              build:
+                context: ./selenium-tests-repo
+              depends_on:
+                - selenium
+                - frontend
+              environment:
+                SELENIUM_URL: http://selenium:4444/wd/hub
+                TARGET_URL: http://frontend:3000
+              command: tail -f /dev/null  # Keeps the container running in standby mode
+          
+          volumes:
+            pgdata:" > docker-compose.yml
+
+      # Start services with Docker Compose
+      - name: Start services with Docker Compose
+        run: |
+          docker-compose -f ./docker-compose.yml up -d
+
+      # Wait for services to be ready
+      - name: Wait for services
+        run: sleep 30 # Adjust as necessary to wait for services to be ready
+
+      # Seed the database
+      - name: Seed the Database
+        run: |
+          docker-compose exec -T postgres psql -U myuser -d postgres -c "
+          CREATE TABLE posts (
+              id SERIAL PRIMARY KEY,
+              post_id VARCHAR NOT NULL,
+              title VARCHAR NOT NULL,
+              body TEXT NOT NULL,
+              created_at TIMESTAMPTZ DEFAULT now()
+          );"   
+
+      # Seed the test database
+      - name: Seed the Test Database
+        run: |
+          docker-compose exec -T postgres-test psql -U test -d test_db -c "
+          CREATE TABLE posts (
+              id SERIAL PRIMARY KEY,
+              post_id VARCHAR NOT NULL,
+              title VARCHAR NOT NULL,
+              body TEXT NOT NULL,
+              created_at TIMESTAMPTZ DEFAULT now()
+          );"      
+
+      # Check the Database Content
+      - name: Check Database Content
+        run: docker-compose exec -T postgres psql -U myuser -d postgres -c "SELECT * FROM posts;"
+
+      - name: Test Backend Connection from Frontend
+        run: docker-compose exec -T frontend curl http://backend:8080/health
+
+      # Fetch and display logs if the frontend service failed
+      - name: Display Frontend Logs
+        run: docker-compose logs frontend
+
+      # Run frontend unit tests
+      - name: Run frontend unit tests
+        run: docker-compose exec -T frontend npm test
+
+      # Run Selenium Browser tests
+      - name: Run Selenium Browser tests
+        id: selenium_tests
+        run: |
+          docker-compose exec -T selenium-tests sbt -Denvironment=githubActions -Dheadless=true test
+
+      # Capture Logs on Failure
+      - name: Capture Selenium Logs on Failure
+        if: failure()
+        run: docker-compose logs selenium-tests
+
+      # Tear down services
+      - name: Tear down services
+        run: docker-compose -f ./docker-compose.yml down
