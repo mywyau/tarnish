@@ -8,6 +8,7 @@ mod tests {
 
     use actix_web::{body::to_bytes, http::StatusCode, test, web, App};
     use bytes::Bytes;
+    use chrono::NaiveDateTime;
     use diesel::prelude::*;
     use diesel::r2d2::{ConnectionManager, PooledConnection};
     use diesel::{r2d2, PgConnection};
@@ -23,10 +24,6 @@ mod tests {
         diesel::sql_query("TRUNCATE TABLE posts RESTART IDENTITY CASCADE;")
             .execute(&mut conn)
             .expect("Failed to reset ID sequence");
-
-        // diesel::sql_query("ALTER SEQUENCE posts_id_seq RESTART WITH 1")
-        //     .execute(&mut conn)
-        //     .expect("Failed to reset ID sequence");
     }
 
     struct TestGuard {
@@ -100,21 +97,28 @@ mod tests {
                 post_id: "abc123".to_string(),
                 title: "Test Post 1".to_string(),
                 body: "This is the first test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewPost {
                 post_id: "def456".to_string(),
                 title: "Test Post 2".to_string(),
                 body: "This is the second test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
         let _guard = TestGuard::new(pool.clone(), posts_to_insert);
 
-        let payload = json!({
+        let payload =
+            json!({
             "id": 200,
             "post_id": "abc200",
             "title": "Test Post",
-            "body": "This is a test post."
+            "body": "This is a test post.",
+                "created_at": "2023-08-29T14:00:00Z",
+                "updated_at": "2023-08-29T14:00:00Z"
         });
 
         let create_req = test::TestRequest::post()
@@ -152,11 +156,15 @@ mod tests {
                 post_id: "abc123".to_string(),
                 title: "Test Post 1".to_string(),
                 body: "This is the first test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewPost {
                 post_id: "def456".to_string(),
                 title: "Test Post 2".to_string(),
                 body: "This is the second test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -192,21 +200,38 @@ mod tests {
         )
             .await;
 
+        let post_1_datetime =
+            NaiveDateTime::parse_from_str("2024-08-29 14:30:00", "%Y-%m-%d %H:%M:%S")
+                .expect("Failed to parse date");
+        let post_2_datetime =
+            NaiveDateTime::parse_from_str("2024-08-29 14:30:01", "%Y-%m-%d %H:%M:%S")
+                .expect("Failed to parse date");
+        let post_3_datetime =
+            NaiveDateTime::parse_from_str("2024-08-29 14:30:02", "%Y-%m-%d %H:%M:%S")
+                .expect("Failed to parse date");
+
         let posts_to_insert = vec![
             NewPost {
                 post_id: "fake_id_1".to_string(),
                 title: "Test Post 1".to_string(),
                 body: "This is the first test post.".to_string(),
+
+                created_at: post_1_datetime, // Current time in ISO 8601 format
+                updated_at: post_1_datetime, // Current time in ISO 8601 format
             },
             NewPost {
                 post_id: "fake_id_2".to_string(),
                 title: "Test Post 2".to_string(),
                 body: "This is the second test post.".to_string(),
+                created_at: post_2_datetime, // Current time in ISO 8601 format
+                updated_at: post_2_datetime, // Current time in ISO 8601 format
             },
             NewPost {
                 post_id: "fake_id_3".to_string(),
                 title: "Test Post 3".to_string(),
                 body: "This is the third test post.".to_string(),
+                created_at: post_3_datetime, // Current time in ISO 8601 format
+                updated_at: post_3_datetime, // Current time in ISO 8601 format
             },
         ];
 
@@ -229,17 +254,18 @@ mod tests {
         assert_eq!(posts.len(), 3);
 
         // Assert the content of each post
-        assert_eq!(posts[0]["post_id"], "fake_id_1");
-        assert_eq!(posts[0]["title"], "Test Post 1");
-        assert_eq!(posts[0]["body"], "This is the first test post.");
+
+        assert_eq!(posts[0]["post_id"], "fake_id_3");
+        assert_eq!(posts[0]["title"], "Test Post 3");
+        assert_eq!(posts[0]["body"], "This is the third test post.");
 
         assert_eq!(posts[1]["post_id"], "fake_id_2");
         assert_eq!(posts[1]["title"], "Test Post 2");
         assert_eq!(posts[1]["body"], "This is the second test post.");
 
-        assert_eq!(posts[2]["post_id"], "fake_id_3");
-        assert_eq!(posts[2]["title"], "Test Post 3");
-        assert_eq!(posts[2]["body"], "This is the third test post.");
+        assert_eq!(posts[2]["post_id"], "fake_id_1");
+        assert_eq!(posts[2]["title"], "Test Post 1");
+        assert_eq!(posts[2]["body"], "This is the first test post.");
     }
 
     async fn test_update_post() {
@@ -261,6 +287,8 @@ mod tests {
                 post_id: "abc888".to_string(),
                 title: "Test Post 1".to_string(),
                 body: "This is the first test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -270,7 +298,9 @@ mod tests {
             "id": 1,
             "post_id": "abc888",
             "title": "Updated Title",
-            "body": "Updated body content."
+            "body": "Updated body content.",
+            "created_at": "2023-08-29T14:00:00Z", // Example timestamp
+    "updated_at": "2023-08-29T14:00:01Z"  // Example timestamp
         });
 
         let put_req = test::TestRequest::put()
@@ -311,11 +341,16 @@ mod tests {
                 post_id: "abc200".to_string(),
                 title: "Test Post 1".to_string(),
                 body: "This is the first test post.".to_string(),
+
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewPost {
                 post_id: "def456".to_string(),
                 title: "Test Post 2".to_string(),
                 body: "This is the second test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -367,11 +402,15 @@ mod tests {
                 post_id: "fake_id_1".to_string(),
                 title: "Test Post 1".to_string(),
                 body: "This is the first test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewPost {
                 post_id: "fake_id_2".to_string(),
                 title: "Test Post 2".to_string(),
                 body: "This is the second test post.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -379,8 +418,8 @@ mod tests {
 
         let delete_request =
             test::TestRequest::delete()
-            .uri("/blog/post/all")
-            .to_request();
+                .uri("/blog/post/all")
+                .to_request();
 
         let delete_response =
             test::call_service(&app, delete_request).await;
