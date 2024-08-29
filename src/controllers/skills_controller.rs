@@ -1,6 +1,7 @@
 use std::env;
 
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
+use actix_web::cookie::Expiration::DateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
@@ -17,15 +18,19 @@ pub struct SkillInput {
     pub skill_id: String,
     pub skill_name: String,
     pub body: String,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 impl SkillInput {
-    pub fn new(id: i32, skill_id: String, skill_name: String, body: String) -> Self {
+    pub fn new(id: i32, skill_id: String, skill_name: String, body: String, created_at: String, updated_at: String) -> Self {
         SkillInput {
             id,
             skill_id,
             skill_name,
             body,
+            created_at,
+            updated_at
         }
     }
 }
@@ -42,6 +47,12 @@ async fn create_skill(
             skill_id: skill_input.skill_id,
             skill_name: skill_input.skill_name,
             body: skill_input.body,
+            created_at: DateTime::parse_from_rfc3339(&skill.created_at)
+                .unwrap()
+                .naive_utc(), // Convert to NaiveDateTime
+            updated_at: DateTime::parse_from_rfc3339(&skill.updated_at)
+                .unwrap()
+                .naive_utc(), // Convert to NaiveDateTime
         };
 
     let mut conn = pool.get().map_err(|e| {

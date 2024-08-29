@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 use crate::schemas::skills_schema::skills;  // Make sure this is the correct import for your schema
@@ -8,6 +9,8 @@ pub struct Skill {
     pub skill_id: String,
     pub skill_name: String,
     pub body: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
@@ -16,4 +19,6 @@ pub struct NewSkill {
     pub skill_id: String,
     pub skill_name: String,
     pub body: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime
 }
