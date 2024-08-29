@@ -7,6 +7,7 @@ diesel::table! {
         title -> Varchar,
         body -> Text,
         created_at -> Nullable<Timestamptz>,
+        updated_at -> Nullable<Timestamptz>,
     }
 }
 
@@ -17,6 +18,7 @@ diesel::table! {
         skill_name -> Varchar,
         body -> Text,
         created_at -> Nullable<Timestamptz>,
+        updated_at -> Nullable<Timestamptz>,
     }
 }
 

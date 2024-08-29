@@ -11,14 +11,6 @@ use crate::schemas::skills_schema::skills;
 use crate::{posts, NewSkill, Skill};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-pub fn establish_connection() -> DbPool {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct SkillInput {
     pub id: i32,
@@ -43,7 +35,6 @@ async fn create_skill(
     pool: web::Data<DbPool>,
     skill: web::Json<SkillInput>,
 ) -> Result<HttpResponse, Error> {
-
     let skill_input = skill.into_inner();
 
     let new_skill =
@@ -76,7 +67,6 @@ async fn get_by_skill_id(
     path: web::Path<String>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-
     let skill_id_path = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
@@ -106,7 +96,6 @@ async fn get_skill(
 
 #[get("/blog/skill/get/all")]
 async fn get_all_skills(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
-
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
@@ -123,7 +112,6 @@ async fn update_skill(
     skill: web::Json<SkillInput>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-
     let skill_id_path = path.into_inner();
     let skill_input = skill.into_inner();
 
@@ -177,7 +165,6 @@ async fn update_skill(
                 .json(response_body))
         }
     }
-
 }
 
 
@@ -186,7 +173,6 @@ async fn delete_skill(
     path: web::Path<String>,  // Changed to String since skill_id is a varchar
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-
     let skill_id_path = path.into_inner();
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
@@ -239,7 +225,6 @@ async fn delete_skill(
 async fn delete_all_skills(
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;

@@ -3,12 +3,10 @@ use std::env;
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
+use tarnish::connectors::postgres_connector::establish_connection;
+use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, get_all_posts, get_by_post_id, get_post, update_post};
 
-use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, establish_connection, get_all_posts, get_by_post_id, get_post, update_post};
-
-use tarnish::controllers::skills_controller::{
-    create_skill, delete_skill, get_all_skills, get_skill, update_skill,
-};
+use tarnish::controllers::skills_controller::{create_skill, delete_skill, get_all_skills, get_by_skill_id, get_skill, update_skill};
 use tarnish::controllers::worklog_controller::{
     create_worklog, delete_worklog, get_all_worklog, get_worklog, update_worklog,
 };
@@ -38,6 +36,7 @@ async fn main() -> std::io::Result<()> {
             )
             .app_data(pool.clone())
             .service(health_check)
+
             // Blog Post Endpoints
             .service(create_post)
             .service(get_post)
@@ -46,7 +45,7 @@ async fn main() -> std::io::Result<()> {
             .service(update_post)
             .service(delete_post)
             .service(delete_all_posts)
-            // .service(delete_all_posts_with_body)
+
             // Worklog Endpoints
             .service(create_worklog)
             .service(get_worklog)
@@ -56,6 +55,7 @@ async fn main() -> std::io::Result<()> {
             // Skills Endpoints
             .service(create_skill)
             .service(get_skill)
+            .service(get_by_skill_id)
             .service(update_skill)
             .service(delete_skill)
             .service(get_all_skills)

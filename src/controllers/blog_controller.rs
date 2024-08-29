@@ -1,6 +1,7 @@
 use std::env;
 
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
@@ -9,32 +10,29 @@ use serde_json::json;
 
 // Import schema
 use crate::{posts, NewPost, Post};
+use chrono::{DateTime, Utc};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
-
-pub fn establish_connection() -> DbPool {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-    r2d2::Pool::builder().build(manager).expect("Failed to create pool.")
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct PostInput {
     pub id: i32,
     pub post_id: String,
     pub title: String,
     pub body: String,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 impl PostInput {
     // Constructor method for creating a new PostInput
-    pub fn new(id: i32, post_id: String, title: String, body: String) -> Self {
+    pub fn new(id: i32, post_id: String, title: String, body: String, created_at: String, updated_at: String) -> Self {
         PostInput {
             id,
             post_id,
             title,
             body,
+            created_at,
+            updated_at,
         }
     }
 }
@@ -51,8 +49,13 @@ async fn create_post(
             post_id: post_input.post_id,
             title: post_input.title,
             body: post_input.body,
+            created_at: DateTime::parse_from_rfc3339(&post_input.created_at)
+                .unwrap()
+                .naive_utc(), // Convert to NaiveDateTime
+            updated_at: DateTime::parse_from_rfc3339(&post_input.updated_at)
+                .unwrap()
+                .naive_utc(), // Convert to NaiveDateTime
         };
-
     let mut conn =
         pool.get().map_err(|e| {
             actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
@@ -106,11 +109,13 @@ async fn get_post(
 
 #[get("/blog/post/get/all")]
 async fn get_all_posts(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+    // Get a connection from the pool
     let mut conn = pool.get().map_err(|e| {
         actix_web::error::ErrorInternalServerError(format!("Couldn't get db connection from pool: {}", e))
     })?;
 
-    match posts::table.load::<Post>(&mut conn) {
+    // Query the posts, ordering them by creation time (assuming created_at is the timestamp column)
+    match posts::table.order(posts::created_at.desc()).load::<Post>(&mut conn) {
         Ok(posts) => Ok(HttpResponse::Ok().json(posts)),
         Err(_) => Ok(HttpResponse::InternalServerError().finish()),
     }

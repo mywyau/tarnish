@@ -5,7 +5,8 @@ CREATE TABLE posts (
     post_id VARCHAR NOT NULL,
     title VARCHAR NOT NULL,
     body TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE skills (
@@ -13,7 +14,8 @@ CREATE TABLE skills (
     skill_id VARCHAR NOT NULL,
     skill_name VARCHAR NOT NULL,
     body TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE worklog (

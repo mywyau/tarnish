@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +10,8 @@ pub struct Post {
     pub post_id: String,
     pub title: String,
     pub body: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
 
 #[derive(Insertable, Queryable, Serialize, Deserialize)]
@@ -18,4 +21,6 @@ pub struct NewPost {
     pub post_id: String,
     pub title: String,
     pub body: String,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
 }
