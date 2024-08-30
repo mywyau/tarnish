@@ -19,7 +19,7 @@ use diesel::Insertable;
 #[diesel(table_name = worklog)]
 pub struct NewWorklog {
     pub worklog_id: String,
-    pub worklog_title: String,
+    pub work_title: String,
     pub body: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,

@@ -21,7 +21,7 @@ CREATE TABLE skills (
 CREATE TABLE worklog (
     id SERIAL PRIMARY KEY,
     worklog_id VARCHAR NOT NULL,
-    worklog_title VARCHAR NOT NULL,
+    work_title VARCHAR NOT NULL,
     body TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()

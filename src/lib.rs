@@ -36,6 +36,6 @@ pub use models::skills_models::{Skill, NewSkill};
 pub use schemas::skills_schema::skills;
 
 
-pub use controllers::worklog_controller::{create_worklog, get_worklog, get_all_worklog, get_by_worklog_id, delete_all_worklog, delete_worklog, delete_all_worklog_with_body};
+pub use controllers::worklog_controller::{create_worklog, get_worklog, get_all_worklog, get_by_worklog_id, delete_all_worklog, delete_worklog};
 pub use models::worklog_models::{Worklog, NewWorklog};
 pub use schemas::worklog_schema::worklog;
