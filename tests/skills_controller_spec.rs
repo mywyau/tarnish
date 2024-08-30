@@ -96,11 +96,15 @@ mod tests {
                 skill_id: "skill1".to_string(),
                 skill_name: "Python".to_string(),
                 body: "Some content about the skill".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewSkill {
                 skill_id: "skill2".to_string(),
                 skill_name: "Typescript".to_string(),
                 body: "Some content about the skill 2".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -110,7 +114,9 @@ mod tests {
             "id": 200,
             "skill_id": "skill3",
             "skill_name": "Rust",
-            "body": "Some content about Rust"
+            "body": "Some content about Rust",
+            "created_at": "2023-08-29T14:00:00Z", // Example timestamp
+            "updated_at": "2023-08-29T14:00:01Z"  // Example timestamp
         });
 
         let create_req =
@@ -149,11 +155,15 @@ mod tests {
                 skill_id: "skill4".to_string(),
                 skill_name: "Cats".to_string(),
                 body: "This is the first skill.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewSkill {
                 skill_id: "skill5".to_string(),
                 skill_name: "Latex".to_string(),
                 body: "This is the second skill.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -194,16 +204,22 @@ mod tests {
                 skill_id: "skill10".to_string(),
                 skill_name: "Raking Leaves".to_string(),
                 body: "Some content 1".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewSkill {
                 skill_id: "skill11".to_string(),
                 skill_name: "Cutting Potatoes".to_string(),
                 body: "Some content 2".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewSkill {
                 skill_id: "skill12".to_string(),
                 skill_name: "Farming Pigeons".to_string(),
                 body: "Some content 3".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -258,6 +274,8 @@ mod tests {
                 skill_id: "skill_25".to_string(),
                 skill_name: "Eating Watermelon 3".to_string(),
                 body: "Fake content".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -267,7 +285,9 @@ mod tests {
             "id": 1,
             "skill_id": "skill_25",
             "skill_name": "Eating Onions",
-            "body": "Updated body content."
+            "body": "Updated body content.",
+            "created_at": "2023-08-29T14:00:00Z", // Example timestamp
+            "updated_at": "2023-08-29T14:00:01Z"  // Example timestamp
         });
 
         let put_req = test::TestRequest::put()
@@ -308,11 +328,15 @@ mod tests {
                 skill_id: "abc200".to_string(),
                 skill_name: "Fake Skill".to_string(),
                 body: "This is the first test skill.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewSkill {
                 skill_id: "def456".to_string(),
                 skill_name: "Fake Skill 2".to_string(),
                 body: "This is the second test skill.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 
@@ -366,11 +390,15 @@ mod tests {
                 skill_id: "fake_id_1".to_string(),
                 skill_name: "Fake Skill 1".to_string(),
                 body: "This is the first skill.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
             NewSkill {
                 skill_id: "fake_id_2".to_string(),
                 skill_name: "Fake Skill 2".to_string(),
                 body: "This is the second skill.".to_string(),
+                created_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
+                updated_at: chrono::Utc::now().naive_utc(), // Current time in ISO 8601 format
             },
         ];
 

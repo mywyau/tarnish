@@ -300,7 +300,7 @@ mod tests {
             "title": "Updated Title",
             "body": "Updated body content.",
             "created_at": "2023-08-29T14:00:00Z", // Example timestamp
-    "updated_at": "2023-08-29T14:00:01Z"  // Example timestamp
+            "updated_at": "2023-08-29T14:00:01Z"  // Example timestamp
         });
 
         let put_req = test::TestRequest::put()

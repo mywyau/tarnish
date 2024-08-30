@@ -1,12 +1,12 @@
 use std::env;
 
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
-use actix_web::cookie::Expiration::DateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use chrono::DateTime;
 
 use crate::schemas::skills_schema::skills;
 use crate::{posts, NewSkill, Skill};
@@ -40,6 +40,7 @@ async fn create_skill(
     pool: web::Data<DbPool>,
     skill: web::Json<SkillInput>,
 ) -> Result<HttpResponse, Error> {
+
     let skill_input = skill.into_inner();
 
     let new_skill =
@@ -47,10 +48,10 @@ async fn create_skill(
             skill_id: skill_input.skill_id,
             skill_name: skill_input.skill_name,
             body: skill_input.body,
-            created_at: DateTime::parse_from_rfc3339(&skill.created_at)
+            created_at: DateTime::parse_from_rfc3339(&skill_input.created_at)
                 .unwrap()
                 .naive_utc(), // Convert to NaiveDateTime
-            updated_at: DateTime::parse_from_rfc3339(&skill.updated_at)
+            updated_at: DateTime::parse_from_rfc3339(&skill_input.updated_at)
                 .unwrap()
                 .naive_utc(), // Convert to NaiveDateTime
         };
