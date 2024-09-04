@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod skills_controller_spec {
     use std::env;
     use tarnish::connectors::postgres_connector::DbPool;
     use tarnish::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};

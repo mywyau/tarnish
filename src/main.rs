@@ -10,6 +10,7 @@ use tarnish::controllers::skills_controller::{create_skill, delete_skill, get_al
 use tarnish::controllers::worklog_controller::{
     create_worklog, delete_worklog, get_all_worklog, get_worklog, update_worklog,
 };
+use tarnish::get_by_worklog_id;
 
 // Define a simple health check endpoint
 #[get("/health")]
@@ -49,9 +50,10 @@ async fn main() -> std::io::Result<()> {
             // Worklog Endpoints
             .service(create_worklog)
             .service(get_worklog)
+            .service(get_by_worklog_id)
+            .service(get_all_worklog)
             .service(update_worklog)
             .service(delete_worklog)
-            .service(get_all_worklog)
             // Skills Endpoints
             .service(create_skill)
             .service(get_skill)
