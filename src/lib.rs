@@ -1,5 +1,4 @@
 pub mod connectors {
-    // Declare each controller within the controllers module
     pub mod postgres_connector;
 }
 
@@ -11,12 +10,11 @@ pub mod controllers {
     pub mod blog_controller;
 }
 pub mod models {
-    // Declare each controller within the controllers module
+
     pub mod user_type;
 }
 
 pub mod table_models {
-    // Declare each controller within the controllers module
     pub mod users;
     pub mod skills_models;
     pub mod worklog_models;
@@ -24,7 +22,6 @@ pub mod table_models {
 }
 
 pub mod schemas {
-    // Declare each controller within the controllers module
     pub mod user_schema;
     pub mod skills_schema;
     pub mod worklog_schema;
@@ -32,6 +29,10 @@ pub mod schemas {
 }
 
 // Re-exporting items for easier access
+
+pub use connectors::postgres_connector::{DbPool, establish_connection};
+
+
 pub use controllers::blog_controller::{create_post, delete_post, get_post, update_post};
 pub use schemas::blog_schema::posts;
 pub use table_models::blog_models::{NewPost, Post};

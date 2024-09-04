@@ -44,6 +44,6 @@ CREATE TABLE users (
 );
 
 -- Insert roles (e.g., admin, editor, viewer)
-INSERT INTO roles (name) VALUES ('admin'), ('editor'), ('viewer');
-
+--INSERT INTO roles (name) VALUES ('admin'), ('editor'), ('viewer');
+--
 
