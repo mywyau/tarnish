@@ -6,7 +6,7 @@ table! {
     users (id) {
         id -> Int4,
         role_id -> Varchar,
-        user_type -> String,
+        user_type -> Varchar,
         username -> Varchar,
         password_hash -> Varchar,
         email -> Varchar,

@@ -1,8 +1,6 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
 
 
-
-
 // Hash a user's password when registering
 fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
     let hashed = hash(password, DEFAULT_COST)?;

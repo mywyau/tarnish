@@ -34,10 +34,11 @@ CREATE TABLE roles (
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
+    role_id INTEGER REFERENCES roles(id),
+    user_type VARCHAR(50) NOT NULL,
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    role_id INTEGER REFERENCES roles(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT now(),
 );

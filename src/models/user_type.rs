@@ -1,8 +1,5 @@
-use chrono::NaiveDateTime;
-use diesel::{Insertable, Queryable};
 use serde::{Deserialize, Serialize};
 
-use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
 use diesel::serialize::{self, IsNull, Output, ToSql};
 use diesel::sql_types::Text;
@@ -15,27 +12,30 @@ pub enum UserType {
     Viewer,
 }
 
-use diesel::pg::Pg;
-
+use diesel::pg::{Pg, PgValue};
 // Serializers and Deserializers for PostgreSQL
 
 // Convert the enum to a string when inserting into the database
+// Implementing ToSql for PostgreSQL
 impl ToSql<Text, Pg> for UserType {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
-        let role_str = match *self {
-            UserType::Admin => "admin",
-            UserType::Editor => "editor",
-            UserType::Viewer => "viewer",
-        };
-        out.write_all(role_str.as_bytes())?;
+    fn to_sql(&self, out: &mut Output<Pg>) -> serialize::Result {
+        let role_str =
+            match *self {
+                UserType::Admin => "admin",
+                UserType::Editor => "editor",
+                UserType::Viewer => "viewer",
+            };
+        out.write_all(role_str.as_bytes())?;  // Write to the SQL output
         Ok(IsNull::No)
     }
 }
 
 // Convert the string from the database back to the enum
+// Implementing FromSql for PostgreSQL
 impl FromSql<Text, Pg> for UserType {
-    fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        match not_none!(bytes) {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let bytes = value.as_bytes(); // Retrieve the byte slice from PgValue
+        match bytes {
             b"admin" => Ok(UserType::Admin),
             b"editor" => Ok(UserType::Editor),
             b"viewer" => Ok(UserType::Viewer),

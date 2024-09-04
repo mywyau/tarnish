@@ -5,7 +5,7 @@ pub mod connectors {
 
 pub mod controllers {
     // Declare each controller within the controllers module
-    pub mod create_user_controller;
+    pub mod user_controller;
     pub mod skills_controller;
     pub mod worklog_controller;
     pub mod blog_controller;
@@ -17,6 +17,7 @@ pub mod models {
 
 pub mod table_models {
     // Declare each controller within the controllers module
+    pub mod users;
     pub mod skills_models;
     pub mod worklog_models;
     pub mod blog_models;
@@ -24,6 +25,7 @@ pub mod table_models {
 
 pub mod schemas {
     // Declare each controller within the controllers module
+    pub mod user_schema;
     pub mod skills_schema;
     pub mod worklog_schema;
     pub mod blog_schema;

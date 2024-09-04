@@ -1,15 +1,12 @@
-use std::env;
-
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
+use chrono::DateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use chrono::DateTime;
 
 use crate::schemas::skills_schema::skills;
-use crate::{posts, NewSkill, Skill};
+use crate::{NewSkill, Skill};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[derive(Serialize, Deserialize)]
@@ -30,7 +27,7 @@ impl SkillInput {
             skill_name,
             body,
             created_at,
-            updated_at
+            updated_at,
         }
     }
 }
@@ -40,7 +37,6 @@ async fn create_skill(
     pool: web::Data<DbPool>,
     skill: web::Json<SkillInput>,
 ) -> Result<HttpResponse, Error> {
-
     let skill_input = skill.into_inner();
 
     let new_skill =

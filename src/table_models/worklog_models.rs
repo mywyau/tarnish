@@ -12,7 +12,6 @@ pub struct Worklog {
 }
 
 use crate::schemas::worklog_schema::worklog;
-use diesel::prelude::*;
 use diesel::Insertable;
 
 #[derive(Insertable)]

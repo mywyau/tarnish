@@ -1,16 +1,12 @@
-use std::env;
-
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
-use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 // Import schema
 use crate::{posts, NewPost, Post};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[derive(Serialize, Deserialize)]
