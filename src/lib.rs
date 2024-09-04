@@ -5,7 +5,7 @@ pub mod connectors {
 
 pub mod controllers {
     // Declare each controller within the controllers module
-    pub mod user_controller;
+    pub mod register_controller;
     pub mod skills_controller;
     pub mod worklog_controller;
     pub mod blog_controller;
