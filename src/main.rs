@@ -3,7 +3,7 @@ use std::env;
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
-use tarnish::connectors::postgres_connector::establish_connection;
+use tarnish::connectors::postgres_connector::{DbConnector, RealDbConnector};
 use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, get_all_posts, get_by_post_id, get_post, update_post};
 
 use tarnish::controllers::skills_controller::{create_skill, delete_skill, get_all_skills, get_by_skill_id, get_skill, update_skill};
@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
-    let pool = web::Data::new(establish_connection());
+    let pool = web::Data::new(RealDbConnector.establish_connection());
 
     HttpServer::new(move || {
         App::new()

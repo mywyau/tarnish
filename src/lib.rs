@@ -30,7 +30,7 @@ pub mod schemas {
 
 // Re-exporting items for easier access
 
-pub use connectors::postgres_connector::{DbPool, establish_connection};
+pub use connectors::postgres_connector::{DbPool, RealDbConnector};
 
 
 pub use controllers::blog_controller::{create_post, delete_post, get_post, update_post};

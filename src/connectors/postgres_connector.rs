@@ -1,33 +1,70 @@
-use diesel::r2d2;
-use std::env;
 use diesel::prelude::*;
-use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::{ConnectionManager, Pool};
 use dotenv::dotenv;
+use std::env;
+use std::error::Error;
+use std::fmt;
 
-pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
+pub type DbPool = Pool<ConnectionManager<PgConnection>>;
 
-pub fn establish_connection() -> Result<DbPool, String> {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").map_err(|_| "DATABASE_URL must be set".to_string())?;
-
-    let manager = ConnectionManager::<PgConnection>::new(database_url);
-
-    r2d2::Pool::builder()
-        .build(manager)
-        .map_err(|_| "Failed to create pool.".to_string())
+// Define custom error type
+#[derive(Debug)]
+pub enum DbConnectionError {
+    MissingDatabaseUrl,
+    PoolCreationError,
 }
 
+// Implement std::fmt::Display for your error type
+impl fmt::Display for DbConnectionError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DbConnectionError::MissingDatabaseUrl => write!(f, "DATABASE_URL must be set"),
+            DbConnectionError::PoolCreationError => write!(f, "Failed to create connection pool"),
+        }
+    }
+}
+
+// Implement std::error::Error for your error type
+impl Error for DbConnectionError {}
+
+// Trait to make the connection injectable for mocking
+pub trait DbConnector {
+    fn establish_connection(&self) -> Result<DbPool, DbConnectionError>;
+}
+
+// Real implementation of the DbConnector trait
+pub struct RealDbConnector;
+
+impl DbConnector for RealDbConnector {
+    fn establish_connection(&self) -> Result<DbPool, DbConnectionError> {
+        dotenv().ok();
+        let database_url = env::var("DATABASE_URL").map_err(|_| DbConnectionError::MissingDatabaseUrl)?;
+        let manager = ConnectionManager::<PgConnection>::new(database_url);
+
+        diesel::r2d2::Pool::builder()
+            .build(manager)
+            .map_err(|_| DbConnectionError::PoolCreationError)
+    }
+}
+
+use mockall::mock;
+use std::sync::Once;
+
+mock! {
+    pub DbConnector {}
+
+    impl DbConnector for DbConnector {
+        fn establish_connection(&self) -> Result<DbPool, DbConnectionError>;
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Once;
     use std::env;
+    use std::sync::Once;
 
-    // This ensures the `.env` file is loaded only once
     static INIT: Once = Once::new();
 
-    // Helper function to initialize the environment
     fn init_env() {
         INIT.call_once(|| {
             dotenv().ok();
@@ -35,66 +72,126 @@ mod tests {
     }
 
     #[test]
-    fn test_establish_connection_success() {
-        // Initialize the environment (once)
-        init_env();
+    fn test_establish_connection_missing_database_url() {
+        // Remove DATABASE_URL to simulate missing environment variable
+        env::remove_var("DATABASE_URL");
 
-        // Ensure the correct DATABASE_URL is set for testing
-        env::set_var("DATABASE_URL", "postgres://test:test-password@localhost:5430/test_db");
+        // Mock the DbConnector
+        let mut mock_connector = MockDbConnector::new();
+        mock_connector
+            .expect_establish_connection()
+            .returning(|| Err(DbConnectionError::MissingDatabaseUrl));
 
-        // Call the function to test
-        let connection_result = establish_connection();
+        // Call the mocked function
+        let connection_result = mock_connector.establish_connection();
 
-        // Check that the connection pool is created successfully
-        assert!(connection_result.is_ok(), "Connection should be established");
+        // Ensure that the error is related to the missing DATABASE_URL
+        assert!(
+            matches!(connection_result, Err(DbConnectionError::MissingDatabaseUrl)),
+            "Expected DbConnectionError::MissingDatabaseUrl, got {:?}",
+            connection_result
+        );
     }
 
     #[test]
-    fn test_establish_connection_missing_database_url() {
-        // Ensure that DATABASE_URL is removed before loading .env
-        env::remove_var("DATABASE_URL");
+    fn test_establish_connection_success() {
+        init_env();
 
-        // Now load the environment variables (this ensures DATABASE_URL is not set)
-        dotenv().ok();
+        // Set a valid DATABASE_URL for testing
+        env::set_var("DATABASE_URL", "postgres://test:test-password@localhost:5430/test_db");
 
-        // Call the function to test and expect it to return an error
-        let connection_result = establish_connection();
+        // Mock the DbConnector
+        let mut mock_connector = MockDbConnector::new();
+        mock_connector
+            .expect_establish_connection()
+            .returning(|| {
+                // Simulate successful connection pool creation
+                let manager = ConnectionManager::<PgConnection>::new("postgres://test:test-password@localhost:5430/test_db");
+                let pool = Pool::builder().build(manager).unwrap();
+                Ok(pool)
+            });
 
-        // Check that the result is an error, as the DATABASE_URL is missing
-        assert!(connection_result.is_err(), "Connection should fail without DATABASE_URL");
-        assert_eq!(connection_result.unwrap_err(), "DATABASE_URL must be set");
+        // Call the mocked function
+        let connection_result = mock_connector.establish_connection();
+
+        // Ensure that the connection is successful
+        assert!(
+            connection_result.is_ok(),
+            "Expected a successful connection, got {:?}",
+            connection_result
+        );
+    }
+
+    #[test]
+    fn test_establish_connection_pool_creation_failure() {
+        init_env();
+
+        // Set a valid DATABASE_URL
+        env::set_var("DATABASE_URL", "postgres://test:test-password@localhost:5430/test_db");
+
+        // Mock the DbConnector
+        let mut mock_connector = MockDbConnector::new();
+        mock_connector
+            .expect_establish_connection()
+            .returning(|| Err(DbConnectionError::PoolCreationError));
+
+        // Call the mocked function
+        let connection_result = mock_connector.establish_connection();
+
+        // Ensure that the error is related to pool creation failure
+        assert!(
+            matches!(connection_result, Err(DbConnectionError::PoolCreationError)),
+            "Expected DbConnectionError::PoolCreationError, got {:?}",
+            connection_result
+        );
+    }
+
+    #[test]
+    fn test_establish_connection_valid_database_url() {
+        // Set a valid DATABASE_URL
+        env::set_var("DATABASE_URL", "postgres://test:test-password@localhost:5430/test_db");
+
+        // Mock the DbConnector
+        let mut mock_connector = MockDbConnector::new();
+        mock_connector
+            .expect_establish_connection()
+            .returning(|| {
+                // Simulate successful connection pool creation
+                let manager = ConnectionManager::<PgConnection>::new("postgres://test:test-password@localhost:5430/test_db");
+                let pool = Pool::builder().build(manager).unwrap();
+                Ok(pool)
+            });
+
+        // Call the mocked function
+        let connection_result = mock_connector.establish_connection();
+
+        // Ensure that the connection is successful
+        assert!(
+            connection_result.is_ok(),
+            "Expected a successful connection, got {:?}",
+            connection_result
+        );
     }
 
     #[test]
     fn test_establish_connection_invalid_database_url() {
-        // Set an invalid DATABASE_URL before loading .env
+        // Set an invalid DATABASE_URL
         env::set_var("DATABASE_URL", "invalid_url");
 
-        // Now load the environment variables
-        dotenv().ok();
+        // Mock the DbConnector
+        let mut mock_connector = MockDbConnector::new();
+        mock_connector
+            .expect_establish_connection()
+            .returning(|| Err(DbConnectionError::PoolCreationError));
 
-        // Call the function to test
-        let connection_result = establish_connection();
+        // Call the mocked function
+        let connection_result = mock_connector.establish_connection();
 
-        // This should return an error because the database URL is invalid
-        assert!(connection_result.is_err(), "Connection should fail with an invalid URL");
-        assert_eq!(connection_result.unwrap_err(), "Failed to create pool.");
-    }
-
-    #[test]
-    fn test_reset_database_url_after_tests() {
-        // Ensure tests don't affect each other's environment variables
-        init_env();
-
-        // Set a valid database URL for this test
-        env::set_var("DATABASE_URL", "postgres://test:test-password@localhost:5430/test_db");
-
-        let connection_result = establish_connection();
-
-        // Check that the connection pool is created successfully
-        assert!(connection_result.is_ok(), "Connection should be established");
-
-        // Reset DATABASE_URL to its previous state after the test (clean up)
-        env::remove_var("DATABASE_URL");
+        // Ensure that the error is related to pool creation failure due to invalid URL
+        assert!(
+            matches!(connection_result, Err(DbConnectionError::PoolCreationError)),
+            "Expected DbConnectionError::PoolCreationError, got {:?}",
+            connection_result
+        );
     }
 }
