@@ -16,11 +16,12 @@ mod jwt_token_service {
             .expect("Time went backwards")
             .as_secs() + 60 * 60; // Token expires in 1 hour
 
-        let claims = Claims {
-            sub: username.to_owned(),
-            exp: expiration as usize,
-            role: role.to_owned(),
-        };
+        let claims =
+            Claims {
+                sub: username.to_owned(),
+                exp: expiration as usize,
+                role: role.to_owned(),
+            };
 
         let token = encode(&Header::default(), &claims, &EncodingKey::from_secret("secret".as_ref())).unwrap();
         token
