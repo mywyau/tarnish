@@ -34,14 +34,15 @@ CREATE TABLE roles (
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    role_id INTEGER REFERENCES roles(id),
-    user_type VARCHAR(50) NOT NULL,
+    role_id VARCHAR(50) NOT NULL,
+    user_type VARCHAR(50) NOT NULL CHECK (user_type IN ('admin', 'editor', 'viewer')),
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
 );
+
 
 -- Insert roles (e.g., admin, editor, viewer)
 --INSERT INTO roles (name) VALUES ('admin'), ('editor'), ('viewer');

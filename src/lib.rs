@@ -4,13 +4,12 @@ pub mod connectors {
 
 pub mod controllers {
     // Declare each controller within the controllers module
-    pub mod register_controller;
+    pub mod register_user_controller;
     pub mod skills_controller;
     pub mod worklog_controller;
     pub mod blog_controller;
 }
 pub mod models {
-
     pub mod user_type;
 }
 
@@ -46,3 +45,8 @@ pub use table_models::skills_models::{NewSkill, Skill};
 pub use controllers::worklog_controller::{create_worklog, delete_all_worklog, delete_worklog, get_all_worklog, get_by_worklog_id, get_worklog};
 pub use schemas::worklog_schema::worklog;
 pub use table_models::worklog_models::{NewWorklog, Worklog};
+
+
+pub use controllers::register_user_controller::create_user;
+pub use schemas::user_schema::users;
+pub use table_models::users::{NewUsers, Users};
