@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod worklog_controller_spec {
     use std::env;
     use tarnish::connectors::postgres_connector::DbPool;
     use tarnish::controllers::worklog_controller::{create_worklog, delete_all_worklog, delete_worklog, get_all_worklog, get_by_worklog_id, update_worklog};

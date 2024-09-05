@@ -1,16 +1,11 @@
-use std::env;
-
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
-use chrono::{DateTime, NaiveDateTime};
+use chrono::DateTime;
 use diesel::prelude::*;
-use diesel::r2d2::{self, ConnectionManager};
-use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::connectors::postgres_connector::DbPool;
-use crate::models::worklog_models::NewWorklog;
-use crate::models::worklog_models::Worklog;
+use crate::table_models::worklog_models::{NewWorklog, Worklog};
 use crate::worklog;
 
 #[derive(Serialize, Deserialize)]
@@ -183,7 +178,6 @@ async fn update_worklog(
         }
     }
 }
-
 
 
 #[delete("/blog/worklog/single/{worklog_id}")]

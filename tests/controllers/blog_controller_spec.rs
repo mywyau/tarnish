@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod blog_controller_spec {
     use std::env;
     use tarnish::connectors::postgres_connector::DbPool;
     use tarnish::controllers::blog_controller::{create_post, delete_all_posts, delete_post, get_all_posts, get_by_post_id, update_post};

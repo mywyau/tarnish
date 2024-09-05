@@ -97,10 +97,12 @@ pg_isready
 
 ```
 psql -U myuser -d postgres -h localhost -p 5432
+```
+```
 psql postgres://myuser:mypassword@localhost:5432/postgres
-
+```
+```
 psql postgres://test:test-password@localhost:5430/test_db
-
 ```
 
 psql -U test -d test_db -h localhost -p 5432
@@ -172,3 +174,15 @@ END $$;
 
 cargo watch -x run
 
+```
+http POST http://localhost:8080/blog/worklog/create \
+Content-Type:application/json \
+id:=1 \
+worklog_id="worklog123" \
+work_title="New Rust Blog Post" \
+body="This is the body of the new worklog." \
+created_at="2023-08-29T14:00:00Z" \
+updated_at="2023-08-29T14:00:01Z"
+```
+
+http GET http://localhost:8080/blog/worklog/retrieve/worklog-id/worklog123
