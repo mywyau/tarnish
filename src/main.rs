@@ -6,10 +6,11 @@ use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::env;
 use tarnish::connectors::postgres_connector::{DbConnector, RealDbConnector};
+use tarnish::controllers::auth_handler::get_user_role;
 use tarnish::controllers::blog_controller::{
     create_post, delete_all_posts, delete_post, get_all_posts, get_by_post_id, get_post, update_post,
 };
-use tarnish::controllers::login_controller::{get_user_role, login};
+use tarnish::controllers::login_controller::{login, logout};
 use tarnish::controllers::register_user_controller::create_user;
 use tarnish::controllers::skills_controller::{
     create_skill, delete_skill, get_all_skills, get_by_skill_id, get_skill, update_skill,
@@ -129,6 +130,7 @@ async fn main() -> std::io::Result<()> {
 
             // User Login Endpoints
             .service(login)
+            .service(logout)
             .service(get_user_role)
     })
         .bind(format!("0.0.0.0:{}", port))?

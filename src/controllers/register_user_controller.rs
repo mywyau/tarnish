@@ -31,6 +31,7 @@ async fn create_user(
     pool: web::Data<DbPool>,
     user_input: web::Json<CreateUserInput>,
 ) -> Result<HttpResponse, Error> {
+
     // Log incoming request for user creation
     info!("Received request to create user: {:?}", user_input.username);
 

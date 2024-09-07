@@ -210,3 +210,14 @@ http POST http://localhost:8080/login username="testuser" password="testpassword
 
 DEL session:cc19492d-2cf6-4bb9-a615-fddc82f5f6c4
 
+
+http POST http://localhost:8080/logout Cookie:"session_id=9b28ca96-1555-4cbf-bafa-f7bc72f3feed"
+
+
+for smaller sets of session keys to delete:
+redis-cli KEYS "session:*" | xargs redis-cli DEL
+
+
+lots of session ids to delete:
+
+redis-cli --scan --pattern "session:*" | xargs redis-cli DEL

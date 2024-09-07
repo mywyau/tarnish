@@ -1,10 +1,9 @@
 use actix_web::cookie::Cookie;
-use actix_web::{get, post, web, Error, HttpRequest, HttpResponse};
+use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 use bcrypt::verify;
 use diesel::prelude::*;
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
-use redis::{AsyncCommands, Client};
-use serde::{Deserialize, Serialize};
+use redis::AsyncCommands;
 use uuid::Uuid;
 
 use crate::schemas::user_schema::users::dsl::*;
@@ -12,34 +11,18 @@ use crate::table_models::users::Users;
 use crate::DbPool;
 use diesel::result::Error as DieselError;
 
-// JWT Claims Struct
-#[derive(Debug, Serialize, Deserialize)]
-struct JWTClaims {
-    sub: String, // Subject (username)
-    role: String,
-    exp: usize,  // Expiration time as a timestamp
-}
-
-// Login Request Payload
-#[derive(Debug, Deserialize)]
-pub struct LoginRequest {
-    pub username: String,
-    pub password: String,
-}
-
-// Session Data to store in Redis
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SessionData {
-    pub user_id: String,
-    pub role: String, // admin, viewer, etc.
-}
-
-// Function to get user by username
 pub fn get_user_by_username(conn: &mut PgConnection, user_name: &str) -> Result<Option<Users>, DieselError> {
     users.filter(username.eq(user_name))
         .first::<Users>(conn)
         .optional()  // This will return Ok(None) if no user is found
 }
+
+pub fn get_user_by_user_id(conn: &mut PgConnection, userId: &str) -> Result<Option<Users>, DieselError> {
+    users.filter(user_id.eq(userId))
+        .first::<Users>(conn)
+        .optional()  // This will return Ok(None) if no user is found
+}
+
 
 #[post("/login")]
 async fn login(
@@ -68,10 +51,11 @@ async fn login(
             let session_id = Uuid::new_v4().to_string();
 
             // Store session in Redis
-            let session_data = SessionData {
-                user_id: user.user_id.clone(),
-                role: user.user_type.clone(),
-            };
+            let session_data =
+                SessionData {
+                    user_id: user.user_id.clone(),
+                    role: user.user_type.clone(),
+                };
 
             let mut redis_conn = redis_client
                 .get_async_connection()
@@ -79,19 +63,21 @@ async fn login(
                 .map_err(|_| actix_web::error::ErrorInternalServerError("Failed to connect to Redis"))?;
 
             let session_key = format!("session:{}", session_id);
+
             let session_value = serde_json::to_string(&session_data)
                 .map_err(|_| actix_web::error::ErrorInternalServerError("Failed to serialize session data"))?;
 
-            redis_conn.set_ex(session_key, session_value, 86400).await.map_err(|_| {
+            redis_conn.set_ex(session_key, session_value, 3600).await.map_err(|_| {
                 actix_web::error::ErrorInternalServerError("Failed to store session in Redis")
             })?;
 
             // Set session ID as cookie
-            let cookie = Cookie::build("session_id", session_id)
-                .path("/")
-                // .secure(true)  // Only send over HTTPS  doesnt work on localhost
-                .http_only(true)
-                .finish();
+            let cookie =
+                Cookie::build("session_id", session_id)
+                    .path("/")
+                    // .secure(true)  // Only send over HTTPS  doesnt work on localhost
+                    .http_only(true)
+                    .finish();
 
             Ok(HttpResponse::Ok()
                 .cookie(cookie)
@@ -126,31 +112,14 @@ async fn check_user_session(
     }
 }
 
-#[get("/admin/only")]
-async fn admin_only(
-    redis_client: web::Data<redis::Client>,
-    req: HttpRequest,
-) -> Result<HttpResponse, Error> {
-    let session_id_cookie = req.cookie("session_id").ok_or_else(|| {
-        actix_web::error::ErrorUnauthorized("No session cookie found")
-    })?;
-    let session_id = session_id_cookie.value();
-
-    let session_data = check_user_session(redis_client, session_id).await.map_err(|e| {
-        actix_web::error::ErrorUnauthorized("Unauthorized")
-    })?;
-
-    // Verify that the user is an admin
-    if session_data.role == "admin" {
-        Ok(HttpResponse::Ok().body("Welcome admin!"))
-    } else {
-        Ok(HttpResponse::Forbidden().body("Access restricted to admins only"))
-    }
-}
-
+use crate::models::LoginRequest::LoginRequest;
+use crate::models::LogoutResponse::LogoutResponse;
+use crate::models::SessionData::SessionData;
+use crate::models::UserRoleResponse::UserRoleResponse;
 use actix_web::error::InternalError;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
+use log::error;
 use std::env;
 
 #[actix_web::main]
@@ -172,181 +141,126 @@ async fn main() -> std::io::Result<()> {
         .await
 }
 
-
-// // Define restricted content structure
-// #[derive(Debug, Serialize)]
-// pub struct RestrictedContent {
-//     pub content: String,
-// }
-//
-// // Route to check the user type
-// #[get("/check-role")]
-// async fn check_role(
-//     redis_client: web::Data<Client>,
-//     req: HttpRequest,
-// ) -> Result<HttpResponse, Error> {
-//
-//     // Extract session ID from the request cookie
-//     let session_id = req
-//         .cookie("session_id")
-//         .map(|cookie| cookie.value().to_string())
-//         .ok_or_else(|| {
-//             InternalError::from_response(
-//                 "No session ID",
-//                 HttpResponse::Unauthorized().finish(),
-//             )
-//                 .into()
-//         })?;
-//
-//     // Fetch session data from Redis
-//     let mut redis_conn = redis_client.get_async_connection().await.map_err(|_| {
-//         InternalError::from_response(
-//             "Failed to connect to Redis",
-//             HttpResponse::InternalServerError().finish(),
-//         )
-//             .into()
-//     })?;
-//
-//     let session_key = format!("session:{}", session_id);
-//     let session_json: Option<String> = redis_conn.get(session_key).await.map_err(|_| {
-//         InternalError::from_response(
-//             "Failed to get session data",
-//             HttpResponse::InternalServerError().finish(),
-//         )
-//             .into()
-//     })?;
-//
-//     // Check if session exists and deserialize
-//     if let Some(session_str) = session_json {
-//         let session_data: SessionData = serde_json::from_str(&session_str).map_err(|_| {
-//             InternalError::from_response(
-//                 "Failed to parse session data",
-//                 HttpResponse::InternalServerError().finish(),
-//             )
-//                 .into()
-//         })?;
-//
-//         // Verify if the user is an admin
-//         if session_data.role == "admin" {
-//             let restricted_content = RestrictedContent {
-//                 content: "This is admin-only content.".to_string(),
-//             };
-//             return Ok(HttpResponse::Ok().json(restricted_content));
-//         } else {
-//             return Ok(HttpResponse::Forbidden().body("Access restricted to admins only"));
-//         }
-//     } else {
-//         Ok(HttpResponse::Unauthorized().body("Invalid session"))
-//     }
-// }
-
-// Define the structure for the response
-#[derive(Serialize, Deserialize)]
-struct UserRoleResponse {
-    role: String,
-    message: String,
-}
-
-// Define your Redis session check handler
-#[get("/get-user-role")]
-async fn get_user_role(
-    redis_client: web::Data<Client>,
+#[post("/logout")]
+async fn logout(
+    pool: web::Data<DbPool>,
+    redis_client: web::Data<redis::Client>,
     req: HttpRequest,
-) -> Result<HttpResponse, Error> {
-    // Get session ID from cookies
-    let session_id_cookie = req.cookie("session_id");
-    let session_id = match session_id_cookie {
+) -> Result<HttpResponse, actix_web::Error> {
+    // Get the session ID from the cookies
+    let session_id = match req.cookie("session_id") {
         Some(cookie) => cookie.value().to_string(),
         None => {
-            return Err(InternalError::from_response(
-                "Session not found",
-                HttpResponse::Unauthorized().finish(),
-            )
-                .into());
+            log::warn!("Session ID not found in cookies");
+            return Ok(HttpResponse::Unauthorized().body("Session ID not found"));
         }
     };
 
-    // Connect to Redis and get session data
+    // Connect to Redis
     let mut redis_conn = redis_client
         .get_async_connection()
         .await
-        .map_err(|_| InternalError::from_response(
-            "Failed to connect to Redis",
-            HttpResponse::InternalServerError().finish(),
-        ))?;
-
-    let session_key = format!("session:{}", session_id);
-    let session_data: Option<String> = redis_conn.get(&session_key).await.map_err(|_| {
-        InternalError::from_response(
-            "Failed to fetch session",
-            HttpResponse::InternalServerError().finish(),
-        )
-    })?;
-
-    // If session exists, return user role
-    if let Some(data) = session_data {
-        // Parse the session data from Redis
-        let user_role: serde_json::Value = serde_json::from_str(&data).map_err(|_| {
+        .map_err(|err| {
+            log::error!("Failed to connect to Redis: {:?}", err);
             InternalError::from_response(
-                "Failed to parse session data",
+                "Failed to connect to Redis",
                 HttpResponse::InternalServerError().finish(),
             )
         })?;
 
-        // Extract the role from the session data
-        let role = user_role["role"].as_str().unwrap_or("viewer");
+    // Fetch session data from Redis
+    let session_key = format!("session:{}", session_id);
+    let session_data: Option<String> = redis_conn
+        .get(&session_key)
+        .await
+        .map_err(|err| {
+            log::error!("Failed to fetch session data from Redis: {:?}", err);
+            InternalError::from_response(
+                "Failed to fetch session data",
+                HttpResponse::InternalServerError().finish(),
+            )
+        })?;
 
-        // Create a JSON response that includes the user role
-        let response = UserRoleResponse {
-            role: role.to_string(),
-            message: format!("User role is {}", role),
+    // If no session data is found, return an error
+    let session_data = match session_data {
+        Some(data) => data,
+        None => {
+            log::warn!("Session not found or expired for session ID: {}", session_id);
+            return Ok(HttpResponse::Unauthorized().body("Session expired or not found"));
+        }
+    };
+
+    // Parse session data to extract the user ID
+    let session_json: serde_json::Value = serde_json::from_str(&session_data).map_err(|err| {
+        log::error!("Failed to parse session data: {:?}", err);
+        InternalError::from_response(
+            "Failed to parse session data",
+            HttpResponse::InternalServerError().finish(),
+        )
+    })?;
+
+    // Extract and clone the user_id as an owned String
+    let user_id_from_redis_cache = session_json["user_id"]
+        .as_str()
+        .ok_or_else(|| {
+            InternalError::from_response(
+                "user_id not found in session data",
+                HttpResponse::InternalServerError().finish(),
+            )
+        })?
+        .to_string(); // Clone to get an owned String
+
+    // Fetch user info from the database based on user_id
+    let mut conn = pool.get().map_err(|_| {
+        log::error!("Failed to get DB connection");
+        actix_web::error::ErrorInternalServerError("Failed to get DB connection")
+    })?;
+
+    let user_name_result = web::block({
+        let user_id_clone = user_id_from_redis_cache.clone(); // Clone the value to use in the closure
+        move || get_user_by_user_id(&mut conn, &user_id_clone)
+    })
+        .await
+        .map_err(|err| {
+            log::error!("Failed to fetch user from database: {:?}", err);
+            actix_web::error::ErrorUnauthorized("Invalid credentials")
+        })?;
+
+    let logout_response =
+        match user_name_result {
+            Ok(Some(user)) => LogoutResponse {
+                username: user.username.clone(),
+                message: format!("Successfully logged out: {}", user.username),
+            },
+            Ok(None) => {
+                log::error!("User not found in the database for user_id: {}", user_id_from_redis_cache);
+                return Ok(HttpResponse::Unauthorized().body("User not found"));
+            }
+            Err(err) => {
+                log::error!("Error occurred while fetching user: {:?}", err);
+                return Err(InternalError::from_response(
+                    format!("Error occurred: {}", err),
+                    HttpResponse::InternalServerError().finish(),
+                ).into());
+            }
         };
 
-        // Return the JSON response
-        Ok(HttpResponse::Ok().json(response))
-    } else {
-        Err(InternalError::from_response(
-            "Session expired",
-            HttpResponse::Unauthorized().finish(),
-        )
-            .into())
+    let user_name_clone = logout_response.username.clone();
+
+    // Delete the session in Redis
+    let delete_result: Result<(), _> = redis_conn.del(&session_key).await;
+
+    match delete_result {
+        Ok(_) => {
+            // Create the response and delete the cookie
+            let mut response = HttpResponse::Ok().json(logout_response);
+            response.del_cookie("session_id");
+            log::info!("User {} logged out successfully", user_name_clone);
+            Ok(response)
+        }
+        Err(err) => {
+            log::error!("Failed to delete session from Redis: {:?}", err);
+            Ok(HttpResponse::InternalServerError().body("Failed to delete session"))
+        }
     }
 }
-
-//
-// // Define your Redis session logout handler
-// #[post("/logout")]
-// async fn logout(
-//     redis_client: web::Data<redis::Client>,
-//     req: HttpRequest,
-// ) -> Result<HttpResponse, Error> {
-//     // Get the session ID from the cookies
-//     let session_id_cookie = req.cookie("session_id");
-//     let session_id = match session_id_cookie {
-//         Some(cookie) => cookie.value().to_string(),
-//         None => {
-//             return Ok(HttpResponse::Unauthorized().body("Session ID not found"));
-//         }
-//     };
-//
-//     // Connect to Redis and delete the session data
-//     let mut redis_conn = redis_client.get_async_connection().await.map_err(|_| {
-//         HttpResponse::InternalServerError().body("Failed to connect to Redis")
-//     })?;
-//
-//     let session_key = format!("session:{}", session_id);
-//
-//     // Delete the session key in Redis
-//     let result: Result<(), _> = redis_conn.del(&session_key).await;
-//
-//     match result {
-//         Ok(_) => {
-//             // Optionally clear the session ID cookie
-//             let mut response = HttpResponse::Ok().body("Successfully logged out");
-//             response.del_cookie(&actix_web::cookie::Cookie::named("session_id"));
-//             Ok(response)
-//         }
-//         Err(_) => Ok(HttpResponse::InternalServerError().body("Failed to delete session")),
-//     }
-// }
-//

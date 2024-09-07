@@ -6,12 +6,19 @@ pub mod controllers {
     // Declare each controller within the controllers module
     pub mod register_user_controller;
     pub mod login_controller;
+
+    pub mod auth_handler;
     pub mod skills_controller;
     pub mod worklog_controller;
     pub mod blog_controller;
 }
 pub mod models {
     pub mod user_type;
+    pub mod LoginRequest;
+    pub mod SessionData;
+    pub mod UserRoleResponse;
+
+    pub mod LogoutResponse;
 }
 
 pub mod table_models {
@@ -31,7 +38,6 @@ pub mod schemas {
 // Re-exporting items for easier access
 
 pub use connectors::postgres_connector::{DbPool, RealDbConnector};
-
 
 pub use controllers::blog_controller::{create_post, delete_post, get_post, update_post};
 pub use schemas::blog_schema::posts;
@@ -53,4 +59,6 @@ pub use schemas::user_schema::users;
 pub use table_models::users::{NewUsers, Users};
 
 pub use controllers::login_controller::login;
+
+pub use controllers::auth_handler::get_user_role;
 
