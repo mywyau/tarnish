@@ -205,3 +205,8 @@ GET session:cc19492d-2cf6-4bb9-a615-fddc82f5f6c4
 
 
 http GET http://localhost:8080/api/get-user-role Cookie:session_id=cc19492d-2cf6-4bb9-a615-fddc82f5f6c4
+
+http POST http://localhost:8080/login username="testuser" password="testpassword"
+
+DEL session:cc19492d-2cf6-4bb9-a615-fddc82f5f6c4
+

@@ -89,6 +89,7 @@ async fn login(
             // Set session ID as cookie
             let cookie = Cookie::build("session_id", session_id)
                 .path("/")
+                // .secure(true)  // Only send over HTTPS  doesnt work on localhost
                 .http_only(true)
                 .finish();
 
@@ -147,6 +148,7 @@ async fn admin_only(
     }
 }
 
+use actix_web::error::InternalError;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use std::env;
@@ -238,10 +240,15 @@ async fn main() -> std::io::Result<()> {
 //     }
 // }
 
-use actix_web::error::InternalError;
+// Define the structure for the response
+#[derive(Serialize, Deserialize)]
+struct UserRoleResponse {
+    role: String,
+    message: String,
+}
 
 // Define your Redis session check handler
-#[get("/api/get-user-role")]
+#[get("/get-user-role")]
 async fn get_user_role(
     redis_client: web::Data<Client>,
     req: HttpRequest,
@@ -255,7 +262,7 @@ async fn get_user_role(
                 "Session not found",
                 HttpResponse::Unauthorized().finish(),
             )
-                .into())
+                .into());
         }
     };
 
@@ -278,14 +285,25 @@ async fn get_user_role(
 
     // If session exists, return user role
     if let Some(data) = session_data {
+        // Parse the session data from Redis
         let user_role: serde_json::Value = serde_json::from_str(&data).map_err(|_| {
             InternalError::from_response(
                 "Failed to parse session data",
                 HttpResponse::InternalServerError().finish(),
             )
         })?;
+
+        // Extract the role from the session data
         let role = user_role["role"].as_str().unwrap_or("viewer");
-        Ok(HttpResponse::Ok().json(role))
+
+        // Create a JSON response that includes the user role
+        let response = UserRoleResponse {
+            role: role.to_string(),
+            message: format!("User role is {}", role),
+        };
+
+        // Return the JSON response
+        Ok(HttpResponse::Ok().json(response))
     } else {
         Err(InternalError::from_response(
             "Session expired",
@@ -294,3 +312,41 @@ async fn get_user_role(
             .into())
     }
 }
+
+//
+// // Define your Redis session logout handler
+// #[post("/logout")]
+// async fn logout(
+//     redis_client: web::Data<redis::Client>,
+//     req: HttpRequest,
+// ) -> Result<HttpResponse, Error> {
+//     // Get the session ID from the cookies
+//     let session_id_cookie = req.cookie("session_id");
+//     let session_id = match session_id_cookie {
+//         Some(cookie) => cookie.value().to_string(),
+//         None => {
+//             return Ok(HttpResponse::Unauthorized().body("Session ID not found"));
+//         }
+//     };
+//
+//     // Connect to Redis and delete the session data
+//     let mut redis_conn = redis_client.get_async_connection().await.map_err(|_| {
+//         HttpResponse::InternalServerError().body("Failed to connect to Redis")
+//     })?;
+//
+//     let session_key = format!("session:{}", session_id);
+//
+//     // Delete the session key in Redis
+//     let result: Result<(), _> = redis_conn.del(&session_key).await;
+//
+//     match result {
+//         Ok(_) => {
+//             // Optionally clear the session ID cookie
+//             let mut response = HttpResponse::Ok().body("Successfully logged out");
+//             response.del_cookie(&actix_web::cookie::Cookie::named("session_id"));
+//             Ok(response)
+//         }
+//         Err(_) => Ok(HttpResponse::InternalServerError().body("Failed to delete session")),
+//     }
+// }
+//
