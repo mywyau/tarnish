@@ -5,6 +5,7 @@ pub mod connectors {
 pub mod controllers {
     // Declare each controller within the controllers module
     pub mod register_user_controller;
+    pub mod login_controller;
     pub mod skills_controller;
     pub mod worklog_controller;
     pub mod blog_controller;
@@ -50,3 +51,6 @@ pub use table_models::worklog_models::{NewWorklog, Worklog};
 pub use controllers::register_user_controller::create_user;
 pub use schemas::user_schema::users;
 pub use table_models::users::{NewUsers, Users};
+
+pub use controllers::login_controller::login;
+

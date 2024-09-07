@@ -8,7 +8,7 @@ use crate::schemas::user_schema::users;
 #[diesel(table_name = users)]  // Ensure this points to the correct table in your schema
 pub struct Users {
     pub id: i32,
-    pub role_id: String,
+    pub user_id: String,
     pub user_type: String,
     pub username: String,
     pub password_hash: String,
@@ -21,7 +21,7 @@ pub struct Users {
 #[derive(Insertable)]
 #[diesel(table_name = users)]  // Ensure this points to the correct table in your schema
 pub struct NewUsers {
-    pub role_id: String,
+    pub user_id: String,
     pub user_type: String,
     pub username: String,
     pub password_hash: String,

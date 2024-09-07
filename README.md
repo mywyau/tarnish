@@ -186,3 +186,22 @@ updated_at="2023-08-29T14:00:01Z"
 ```
 
 http GET http://localhost:8080/blog/worklog/retrieve/worklog-id/worklog123
+
+
+
+http POST http://localhost:8080/create/account/user \
+user_id="12345" \
+username="testuser" \
+password="password123" \
+email="testuser@example.com" \
+user_type="admin" \
+created_at="2024-09-05T12:00:00Z" \
+updated_at="2024-09-05T12:00:00Z"
+
+docker run --name my-redis -p 6379:6379 -d redis
+
+GET session:cc19492d-2cf6-4bb9-a615-fddc82f5f6c4
+
+
+
+http GET http://localhost:8080/api/get-user-role Cookie:session_id=cc19492d-2cf6-4bb9-a615-fddc82f5f6c4
