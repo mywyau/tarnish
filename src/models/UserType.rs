@@ -1,3 +1,4 @@
+
 use serde::{Deserialize, Serialize};
 
 use diesel::deserialize::{self, FromSql};
@@ -97,3 +98,4 @@ mod tests {
         }
     }
 }
+

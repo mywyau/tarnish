@@ -18,7 +18,7 @@ pub struct Users {
 }
 
 
-#[derive(Insertable)]
+#[derive(Debug, Insertable)]
 #[diesel(table_name = users)]  // Ensure this points to the correct table in your schema
 pub struct NewUsers {
     pub user_id: String,

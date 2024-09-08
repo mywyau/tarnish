@@ -1,23 +1,26 @@
+pub mod connectors;
+pub mod controllers;
+pub mod models;
+
+pub mod middleware;
+pub mod schemas;
+pub mod table_models;
+
+use crate::connectors::postgres_connector::{DbConnector, RealDbConnector};
+use crate::controllers::auth_handler::*;
+use crate::controllers::blog_controller::*;
+use crate::controllers::login_controller::*;
+use crate::controllers::register_user_controller::*;
+use crate::controllers::skills_controller::*;
+use crate::controllers::worklog_controller::create_worklog;
+use crate::controllers::worklog_controller::*;
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
-use redis::aio::Connection;
+use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::env;
-use tarnish::connectors::postgres_connector::{DbConnector, RealDbConnector};
-use tarnish::controllers::auth_handler::get_user_role;
-use tarnish::controllers::blog_controller::{
-    create_post, delete_all_posts, delete_post, get_all_posts, get_by_post_id, get_post, update_post,
-};
-use tarnish::controllers::login_controller::{login, logout};
-use tarnish::controllers::register_user_controller::create_user;
-use tarnish::controllers::skills_controller::{
-    create_skill, delete_skill, get_all_skills, get_by_skill_id, get_skill, update_skill,
-};
-use tarnish::controllers::worklog_controller::{
-    create_worklog, delete_worklog, get_all_worklog, get_by_worklog_id, get_worklog, update_worklog,
-};
 
 // Redis session struct
 #[derive(Debug, Deserialize, Serialize)]
@@ -32,7 +35,7 @@ async fn set_session_in_redis(
     session_id: &str,
     session_data: &SessionData,
 ) -> Result<(), redis::RedisError> {
-    let mut conn: Connection = redis_client.get_async_connection().await?; // Use get_async_connection
+    let mut conn: MultiplexedConnection = redis_client.get_multiplexed_async_connection().await?; // Use get_multiplexed_async_connection
     let session_key = format!("session:{}", session_id);
     let session_json = serde_json::to_string(session_data).unwrap();
 
@@ -47,7 +50,7 @@ async fn get_session_from_redis(
     redis_client: &redis::Client,
     session_id: &str,
 ) -> Result<Option<SessionData>, redis::RedisError> {
-    let mut conn: Connection = redis_client.get_async_connection().await?; // Use get_async_connection
+    let mut conn = redis_client.get_multiplexed_async_connection().await?; // Use get_multiplexed_async_connection
     let session_key = format!("session:{}", session_id);
 
     let session_json: Option<String> = conn.get(session_key).await?;
@@ -90,7 +93,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(
                 Cors::default()
-                    .allow_any_origin()
+                    // .allow_any_origin()
+                    .allowed_origin("http://localhost:3000") // Adjust this based on your frontend URL
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allow_any_header()
                     .supports_credentials()

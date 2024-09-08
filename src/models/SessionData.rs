@@ -6,5 +6,3 @@ pub struct SessionData {
     pub user_id: String,
     pub role: String, // admin, viewer, etc.
 }
-
-

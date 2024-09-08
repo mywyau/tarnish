@@ -4,8 +4,9 @@ use diesel::r2d2::{self, ConnectionManager};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+use crate::schemas::blog_schema::posts;
+use crate::table_models::blog_models::{NewPost, Post};
 // Import schema
-use crate::{posts, NewPost, Post};
 use chrono::DateTime;
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
@@ -263,7 +264,8 @@ mod blog_controller_spec {
     use std::env;
 
     use crate::controllers::blog_controller::*;
-    use crate::{delete_post, posts, DbPool, NewPost};
+    // use crate::{delete_post, posts, DbPool, NewPost};
+
     use actix_web::{body::to_bytes, http::StatusCode, test, web, App};
     use bytes::Bytes;
     use chrono::NaiveDateTime;
