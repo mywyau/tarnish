@@ -34,7 +34,7 @@ CREATE TABLE roles (
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    role_id VARCHAR(50) NOT NULL,
+    user_id VARCHAR(50) NOT NULL,
     user_type VARCHAR(50) NOT NULL CHECK (user_type IN ('admin', 'editor', 'viewer')),
     username VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,

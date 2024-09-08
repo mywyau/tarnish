@@ -13,7 +13,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateUserInput {
-    pub role_id: String,
+    pub user_id: String,
     pub username: String,
     pub password: String,
     pub email: String,
@@ -31,6 +31,7 @@ async fn create_user(
     pool: web::Data<DbPool>,
     user_input: web::Json<CreateUserInput>,
 ) -> Result<HttpResponse, Error> {
+
     // Log incoming request for user creation
     info!("Received request to create user: {:?}", user_input.username);
 
@@ -54,7 +55,7 @@ async fn create_user(
         username: user_input.username.clone(),
         password_hash: hashed_password,
         email: user_input.email.clone(),
-        role_id: user_input.role_id.clone(),
+        user_id: user_input.user_id.clone(),
         user_type: user_input.user_type.clone(),
         created_at: DateTime::parse_from_rfc3339(&user_input.created_at)
             .unwrap()

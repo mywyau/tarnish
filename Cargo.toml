@@ -20,6 +20,14 @@ bcrypt = "0.15.1"
 thiserror = "1.0.63"  # Or the latest version
 mockall = "0.13.0"
 
+redis = { version = "0.26.1", features = ["tokio-comp"] }
+tokio = { version = "1", features = ["full"] }
+# redis deps
+actix-session = "0.10.0"
+config = "0.14.0"
+uuid = { version = "1.10.0", features = ["v4"] }
+
+
 
 
 [dev-dependencies]
