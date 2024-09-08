@@ -20,6 +20,12 @@ struct EmailQuery {
     email: String,
 }
 
+// Struct to parse query parameters for username
+#[derive(Debug, serde::Deserialize)]
+struct UsernameQuery {
+    username: String,
+}
+
 // Check if email exists
 #[get("/api/check-email")]
 async fn check_email(
@@ -57,6 +63,48 @@ async fn check_email(
         }
         Err(e) => {
             error!("Database query failed for email: {}", e);
+            Err(actix_web::error::ErrorInternalServerError("Database query failed"))
+        }
+    }
+}
+
+// Check if username exists
+#[get("/api/check-username")]
+async fn check_username(
+    pool: web::Data<DbPool>,
+    query: web::Query<UsernameQuery>, // Using structured query params
+) -> Result<HttpResponse, Error> {
+    let username = query.username.clone(); // Clone the username so it can be moved into the async block
+
+    info!("Checking if username '{}' exists", username);
+
+    // Get database connection
+    let mut conn = pool.get().map_err(|e| {
+        error!("Couldn't get db connection from pool: {}", e);
+        actix_web::error::ErrorInternalServerError("Failed to retrieve connection from pool")
+    })?;
+
+    // Check if the username exists
+    let exists = web::block(move || {
+        users::table
+            .filter(users::username.eq(username))
+            .first::<Users>(&mut conn)
+            .optional()
+            .map(|user| user.is_some()) // If a user exists, return true
+    })
+        .await
+        .map_err(|e| {
+            error!("Database query failed for username: {}", e);
+            actix_web::error::ErrorInternalServerError("Database query failed")
+        })?;
+
+    // Handle the Result
+    match exists {
+        Ok(exists_value) => {
+            Ok(HttpResponse::Ok().json(CheckResponse { exists: exists_value }))
+        }
+        Err(e) => {
+            error!("Database query failed for username: {}", e);
             Err(actix_web::error::ErrorInternalServerError("Database query failed"))
         }
     }

@@ -14,6 +14,7 @@ use crate::controllers::register_user_controller::*;
 use crate::controllers::skills_controller::*;
 use crate::controllers::worklog_controller::create_worklog;
 use crate::controllers::worklog_controller::*;
+use crate::controllers::validate_user_controller::*;
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
@@ -136,6 +137,10 @@ async fn main() -> std::io::Result<()> {
             .service(login)
             .service(logout)
             .service(get_user_role)
+
+            // Create User Input Validation
+            .service(check_username)
+            .service(check_email)
     })
         .bind(format!("0.0.0.0:{}", port))?
         .run()
