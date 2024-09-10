@@ -4,9 +4,8 @@ use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-
 use crate::schemas::skills_schema::skills;
-use crate::{NewSkill, Skill};
+use crate::table_models::skills_models::{NewSkill, Skill};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[derive(Serialize, Deserialize)]
@@ -257,20 +256,24 @@ async fn delete_all_skills(
 
 #[cfg(test)]
 mod skills_controller_spec {
-    use std::env;
     // use tarnish::connectors::postgres_connector::DbPool;
     // use tarnish::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};
     // use tarnish::schemas::skills_schema::skills;
     // use tarnish::{NewSkill, Skill};
 
-    use crate::controllers::skills_controller::*;
-    use crate::{skills, DbPool, NewSkill};
     use actix_web::{body::to_bytes, http::StatusCode, test, web, App};
     use bytes::Bytes;
     use diesel::r2d2::{ConnectionManager, PooledConnection};
-    use diesel::{r2d2, PgConnection};
+    use diesel::{r2d2, OptionalExtension, PgConnection, RunQueryDsl};
     use dotenv::dotenv;
     use serde_json::{json, Value};
+    use std::env;
+    // use tarnish::controllers::skills_controller::{delete_all_skills, get_all_skills, get_by_skill_id};
+    // use tarnish::{create_skill, delete_skill, skills, update_skill, DbPool, NewSkill, Skill};
+    use crate::connectors::postgres_connector::DbPool;
+    use crate::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};
+    use crate::schemas::skills_schema::skills;
+    use crate::table_models::skills_models::{NewSkill, Skill};
 
     #[ctor::ctor]
     fn init() {

@@ -1,4 +1,3 @@
-use crate::models::UserRoleResponse::UserRoleResponse;
 use actix_web::error::InternalError;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use diesel::prelude::*;
@@ -73,7 +72,7 @@ async fn get_user_role(
 
         // Create a JSON response that includes the user role
         let response =
-            UserRoleResponse {
+            crate::models::UserRoleResponse::UserRoleResponse {
                 role: role.to_string(),
                 message: format!("User role is {}", role),
             };

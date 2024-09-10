@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::connectors::postgres_connector::DbPool;
+use crate::schemas::worklog_schema::worklog;
 use crate::table_models::worklog_models::{NewWorklog, Worklog};
-use crate::worklog;
 
 #[derive(Serialize, Deserialize)]
 pub struct WorklogInput {

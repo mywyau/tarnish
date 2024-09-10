@@ -6,9 +6,6 @@ use diesel::{PgConnection, QueryDsl, RunQueryDsl};
 use redis::AsyncCommands;
 use uuid::Uuid;
 
-use crate::schemas::user_schema::users::dsl::*;
-use crate::table_models::users::Users;
-use crate::DbPool;
 use diesel::result::Error as DieselError;
 
 pub fn get_user_by_username(conn: &mut PgConnection, user_name: &str) -> Result<Option<Users>, DieselError> {
@@ -112,15 +109,18 @@ async fn check_user_session(
     }
 }
 
-use crate::models::LoginRequest::LoginRequest;
-use crate::models::LogoutResponse::LogoutResponse;
-use crate::models::SessionData::SessionData;
-use crate::models::UserRoleResponse::UserRoleResponse;
 use actix_web::error::InternalError;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
 use log::error;
 use std::env;
+use crate::connectors::postgres_connector::DbPool;
+use crate::models::LoginRequest::LoginRequest;
+use crate::models::LogoutResponse::LogoutResponse;
+use crate::models::SessionData::SessionData;
+use crate::schemas::user_schema::users::dsl::users;
+use crate::schemas::user_schema::users::{user_id, username};
+use crate::table_models::users::Users;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -228,10 +228,11 @@ async fn logout(
 
     let logout_response =
         match user_name_result {
-            Ok(Some(user)) => LogoutResponse {
-                username: user.username.clone(),
-                message: format!("Successfully logged out: {}", user.username),
-            },
+            Ok(Some(user)) =>
+                LogoutResponse {
+                    username: user.username.clone(),
+                    message: format!("Successfully logged out: {}", user.username),
+                },
             Ok(None) => {
                 log::error!("User not found in the database for user_id: {}", user_id_from_redis_cache);
                 return Ok(HttpResponse::Unauthorized().body("User not found"));
