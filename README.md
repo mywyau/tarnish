@@ -84,7 +84,7 @@ http DELETE http://localhost:8080/blog/posts/all/message
 ```
 http DELETE http://localhost:8080/blog/post/single/{post_id}
 ```
-
+kill -9 84125
 ## Postgres SQL
 
 To check if the connection is established and ready

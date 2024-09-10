@@ -32,8 +32,8 @@ async fn create_user(
     user_input: web::Json<CreateUserInput>,
 ) -> Result<HttpResponse, Error> {
 
-    // Initialize the logger
-    env_logger::init();
+    // // Initialize the logger
+    // env_logger::init();
 
     // Log incoming request for user creation
     info!("Received request to create user: {:?}", user_input.username);
