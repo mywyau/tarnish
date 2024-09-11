@@ -68,6 +68,10 @@ async fn get_session_from_redis(
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().body("OK")
 }
+// Import your rate limiter from the middleware module
+use actix_web::middleware::Logger;
+use crate::middleware::rate_limiter::RateLimiter;
+// Adding Logger middleware for logging
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -88,21 +92,24 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    // Store Redis client in a web::Data container for sharing between middlewares and handlers
     let redis_client_data = web::Data::new(redis_client);
 
+    // Set up the Actix server
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default()) // Add logging middleware for better observability
             .wrap(
                 Cors::default()
-                    // .allow_any_origin()
                     .allowed_origin("http://localhost:3000") // Adjust this based on your frontend URL
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allow_any_header()
                     .supports_credentials()
                     .max_age(3600),
             )
-            .app_data(pool.clone()) // Passing the PostgreSQL connection pool to handlers
-            .app_data(redis_client_data.clone()) // Pass the Redis client to handlers
+            .app_data(pool.clone()) // Pass the PostgreSQL connection pool to handlers
+            .app_data(redis_client_data.clone()) // Pass the Redis client to handlers and middleware
+            .wrap(RateLimiter::new(redis_client_data.clone(), 2, 120)) // Rate limiting middleware with Redis
             .service(health_check)
 
             // Blog Post Endpoints
@@ -113,7 +120,6 @@ async fn main() -> std::io::Result<()> {
             .service(update_post)
             .service(delete_post)
             .service(delete_all_posts)
-
             // Worklog Endpoints
             .service(create_worklog)
             .service(get_worklog)
