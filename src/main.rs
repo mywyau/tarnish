@@ -1,7 +1,6 @@
 pub mod connectors;
 pub mod controllers;
 pub mod models;
-
 pub mod middleware;
 pub mod schemas;
 pub mod table_models;
@@ -35,13 +34,12 @@ async fn set_session_in_redis(
     redis_client: &redis::Client,
     session_id: &str,
     session_data: &SessionData,
-) -> Result<(), redis::RedisError> {
-    let mut conn: MultiplexedConnection = redis_client.get_multiplexed_async_connection().await?; // Use get_multiplexed_async_connection
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut conn: MultiplexedConnection = redis_client.get_multiplexed_async_connection().await?;
     let session_key = format!("session:{}", session_id);
-    let session_json = serde_json::to_string(session_data).unwrap();
 
-    // Set session data in Redis with an expiration time
-    conn.set_ex(session_key, session_json, 86400).await?; // 86400 seconds = 1 day
+    let session_json = serde_json::to_string(session_data)?;
+    conn.set_ex(session_key, session_json, 86400).await?;
 
     Ok(())
 }
@@ -50,28 +48,35 @@ async fn set_session_in_redis(
 async fn get_session_from_redis(
     redis_client: &redis::Client,
     session_id: &str,
-) -> Result<Option<SessionData>, redis::RedisError> {
-    let mut conn = redis_client.get_multiplexed_async_connection().await?; // Use get_multiplexed_async_connection
+) -> Result<Option<SessionData>, Box<dyn std::error::Error>> {
+    let mut conn = redis_client.get_multiplexed_async_connection().await?;
     let session_key = format!("session:{}", session_id);
 
     let session_json: Option<String> = conn.get(session_key).await?;
     if let Some(session_str) = session_json {
-        let session_data: SessionData = serde_json::from_str(&session_str).unwrap();
+        let session_data: SessionData = serde_json::from_str(&session_str)?;
         Ok(Some(session_data))
     } else {
         Ok(None)
     }
 }
 
-// Define a simple health check endpoint
+// Health check endpoint
 #[get("/health")]
 async fn health_check() -> impl Responder {
     HttpResponse::Ok().body("OK")
 }
-// Import your rate limiter from the middleware module
+
+// Test handler
+#[get("/test")]
+async fn test_handler() -> impl Responder {
+    HttpResponse::Ok().body("This is a test")
+}
+
+// Import rate limiter
 use actix_web::middleware::Logger;
+use actix_web::web::Data;
 use crate::middleware::rate_limiter::RateLimiter;
-// Adding Logger middleware for logging
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -87,30 +92,31 @@ async fn main() -> std::io::Result<()> {
     let pool = match RealDbConnector.establish_connection() {
         Ok(pool) => web::Data::new(pool),
         Err(e) => {
-            eprintln!("Failed to connect to the database: {}", e);
+            log::error!("Failed to connect to the database: {}", e);
             return Err(std::io::Error::new(std::io::ErrorKind::Other, "Failed to connect to the database"));
         }
     };
 
-    // Store Redis client in a web::Data container for sharing between middlewares and handlers
-    let redis_client_data = web::Data::new(redis_client);
+    // Store Redis client in a web::Data container
+    let redis_client_data = Data::new(redis_client.clone());
 
     // Set up the Actix server
     HttpServer::new(move || {
         App::new()
-            .wrap(Logger::default()) // Add logging middleware for better observability
+            .wrap(Logger::default()) // Add logging middleware
             .wrap(
                 Cors::default()
-                    .allowed_origin("http://localhost:3000") // Adjust this based on your frontend URL
+                    .allowed_origin("http://localhost:3000") // Adjust frontend URL
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allow_any_header()
                     .supports_credentials()
                     .max_age(3600),
             )
             .app_data(pool.clone()) // Pass the PostgreSQL connection pool to handlers
-            .app_data(redis_client_data.clone()) // Pass the Redis client to handlers and middleware
-            .wrap(RateLimiter::new(redis_client_data.clone(), 2, 120)) // Rate limiting middleware with Redis
+            .app_data(redis_client_data.clone()) // Pass the Redis client to handlers
+            .wrap(RateLimiter::new(redis_client_data.clone(), 100, 60)) // Rate limiter (100 requests per minute)
             .service(health_check)
+            .service(test_handler) // Add the test route
 
             // Blog Post Endpoints
             .service(create_post)
@@ -120,6 +126,7 @@ async fn main() -> std::io::Result<()> {
             .service(update_post)
             .service(delete_post)
             .service(delete_all_posts)
+
             // Worklog Endpoints
             .service(create_worklog)
             .service(get_worklog)
@@ -144,7 +151,7 @@ async fn main() -> std::io::Result<()> {
             .service(logout)
             .service(get_user_role)
 
-            // Create User Input Validation
+            // User Input Validation
             .service(check_username)
             .service(check_email)
     })

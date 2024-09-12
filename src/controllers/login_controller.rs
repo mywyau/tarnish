@@ -102,7 +102,8 @@ async fn check_user_session(
     })?;
 
     if let Some(session_str) = session_json {
-        let session_data: SessionData = serde_json::from_str(&session_str).unwrap();
+        let session_data: SessionData = serde_json::from_str(&session_str)
+            .map_err(|_| HttpResponse::InternalServerError().body("Failed to parse session data"))?;
         Ok(session_data)
     } else {
         Err(HttpResponse::Unauthorized().body("Invalid or expired session"))
@@ -112,7 +113,6 @@ async fn check_user_session(
 use actix_web::error::InternalError;
 use actix_web::{App, HttpServer};
 use dotenv::dotenv;
-use log::error;
 use std::env;
 use crate::connectors::postgres_connector::DbPool;
 use crate::models::LoginRequest::LoginRequest;
