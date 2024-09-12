@@ -11,9 +11,9 @@ use crate::controllers::blog_controller::*;
 use crate::controllers::login_controller::*;
 use crate::controllers::register_user_controller::*;
 use crate::controllers::skills_controller::*;
+use crate::controllers::validate_user_controller::*;
 use crate::controllers::worklog_controller::create_worklog;
 use crate::controllers::worklog_controller::*;
-use crate::controllers::validate_user_controller::*;
 use actix_cors::Cors;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 use dotenv::dotenv;
@@ -21,6 +21,7 @@ use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::env;
+
 
 // Redis session struct
 #[derive(Debug, Deserialize, Serialize)]
@@ -73,10 +74,10 @@ async fn test_handler() -> impl Responder {
     HttpResponse::Ok().body("This is a test")
 }
 
+use crate::middleware::rate_limiter::RateLimiter;
 // Import rate limiter
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
-use crate::middleware::rate_limiter::RateLimiter;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -100,18 +101,20 @@ async fn main() -> std::io::Result<()> {
     // Store Redis client in a web::Data container
     let redis_client_data = Data::new(redis_client.clone());
 
+    let cors =
+        Cors::default()
+            .allowed_origin("http://localhost:3000") // Adjust frontend URL
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+            .allow_any_header()
+            .supports_credentials()
+            .max_age(3600);
+
     // Set up the Actix server
     HttpServer::new(move || {
         App::new()
+            .app_data(web::JsonConfig::default().limit(4096))  // Limit request body to 4KB, helps prevent ddos
             .wrap(Logger::default()) // Add logging middleware
-            .wrap(
-                Cors::default()
-                    .allowed_origin("http://localhost:3000") // Adjust frontend URL
-                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-                    .allow_any_header()
-                    .supports_credentials()
-                    .max_age(3600),
-            )
+            .wrap(cors)
             .app_data(pool.clone()) // Pass the PostgreSQL connection pool to handlers
             .app_data(redis_client_data.clone()) // Pass the Redis client to handlers
             .wrap(RateLimiter::new(redis_client_data.clone(), 100, 60)) // Rate limiter (100 requests per minute)
