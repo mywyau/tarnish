@@ -1,6 +1,5 @@
 use actix_web::error::InternalError;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
-use diesel::prelude::*;
 use log::error;
 use redis::{AsyncCommands, Client};
 // Add logging for errors
