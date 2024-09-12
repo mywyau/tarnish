@@ -21,7 +21,7 @@ use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::env;
-
+use std::sync::Arc;
 
 // Redis session struct
 #[derive(Debug, Deserialize, Serialize)]
@@ -81,7 +81,7 @@ use actix_web::web::Data;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+    dotenv::dotenv().ok();
 
     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
 
@@ -101,63 +101,63 @@ async fn main() -> std::io::Result<()> {
     // Store Redis client in a web::Data container
     let redis_client_data = Data::new(redis_client.clone());
 
-    let cors =
-        Cors::default()
-            .allowed_origin("http://localhost:3000") // Adjust frontend URL
-            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-            .allow_any_header()
-            .supports_credentials()
-            .max_age(3600);
+    // // Wrap Cors in Arc for thread safety
+    // let cors = Arc::new(
+    //     Cors::default()
+    //         .allowed_origin("http://localhost:3000") // Adjust frontend URL
+    //         .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+    //         .allow_any_header()
+    //         .supports_credentials()
+    //         .max_age(3600),
+    // );
 
     // Set up the Actix server
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::JsonConfig::default().limit(4096))  // Limit request body to 4KB, helps prevent ddos
-            .wrap(Logger::default()) // Add logging middleware
-            .wrap(cors)
-            .app_data(pool.clone()) // Pass the PostgreSQL connection pool to handlers
-            .app_data(redis_client_data.clone()) // Pass the Redis client to handlers
-            .wrap(RateLimiter::new(redis_client_data.clone(), 100, 60)) // Rate limiter (100 requests per minute)
-            .service(health_check)
-            .service(test_handler) // Add the test route
+    HttpServer::new(
+        move || {
+            let cors =
+                Cors::default()
+                    .allow_any_origin()
+                    // .allowed_origin("http://localhost:3000") // Adjust frontend URL
+                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+                    .allow_any_header()
+                    .supports_credentials()
+                    .max_age(3600);
 
-            // Blog Post Endpoints
-            .service(create_post)
-            .service(get_post)
-            .service(get_by_post_id)
-            .service(get_all_posts)
-            .service(update_post)
-            .service(delete_post)
-            .service(delete_all_posts)
 
-            // Worklog Endpoints
-            .service(create_worklog)
-            .service(get_worklog)
-            .service(get_by_worklog_id)
-            .service(get_all_worklog)
-            .service(update_worklog)
-            .service(delete_worklog)
-
-            // Skills Endpoints
-            .service(create_skill)
-            .service(get_skill)
-            .service(get_by_skill_id)
-            .service(update_skill)
-            .service(delete_skill)
-            .service(get_all_skills)
-
-            // User Registration Endpoints
-            .service(create_user)
-
-            // User Login Endpoints
-            .service(login)
-            .service(logout)
-            .service(get_user_role)
-
-            // User Input Validation
-            .service(check_username)
-            .service(check_email)
-    })
+            App::new()
+                .wrap(Logger::default()) // Add logging middleware
+                .wrap(cors) // No need for Arc, create a new instance of Cors
+                .app_data(pool.clone()) // Pass the PostgreSQL connection pool to handlers
+                .app_data(redis_client_data.clone()) // Pass the Redis client to handlers
+                .wrap(RateLimiter::new(redis_client_data.clone(), 10, 60)) // Rate limiter
+                .service(health_check)
+                .service(test_handler)
+                .service(create_post)
+                .service(get_post)
+                .service(get_by_post_id)
+                .service(get_all_posts)
+                .service(update_post)
+                .service(delete_post)
+                .service(delete_all_posts)
+                .service(create_worklog)
+                .service(get_worklog)
+                .service(get_by_worklog_id)
+                .service(get_all_worklog)
+                .service(update_worklog)
+                .service(delete_worklog)
+                .service(create_skill)
+                .service(get_skill)
+                .service(get_by_skill_id)
+                .service(update_skill)
+                .service(delete_skill)
+                .service(get_all_skills)
+                .service(create_user)
+                .service(login)
+                .service(logout)
+                .service(get_user_role)
+                .service(check_username)
+                .service(check_email)
+        })
         .bind(format!("0.0.0.0:{}", port))?
         .run()
         .await
