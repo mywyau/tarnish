@@ -1,11 +1,11 @@
 use actix_web::body::{BoxBody, EitherBody};
 use actix_web::dev::{Service, ServiceRequest, ServiceResponse, Transform};
+use actix_web::http::StatusCode;
 use actix_web::{web, Error, HttpResponse};
 use futures::future::{ok, LocalBoxFuture, Ready};
 use redis::AsyncCommands;
 use serde_json::json;
 use std::task::{Context, Poll};
-use actix_web::http::StatusCode;
 
 // Define the `RateLimiter` struct
 pub struct RateLimiter {
@@ -27,7 +27,7 @@ impl RateLimiter {
 // Implement the `Transform` trait for `RateLimiter`
 impl<S, B> Transform<S, ServiceRequest> for RateLimiter
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error> + 'static,
     S::Future: 'static,
     B: 'static,
 {
@@ -58,7 +58,7 @@ pub struct RateLimiterMiddleware<S> {
 // Implement the `Service` trait for `RateLimiterMiddleware`
 impl<S, B> Service<ServiceRequest> for RateLimiterMiddleware<S>
 where
-    S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error> + 'static,
+    S: Service<ServiceRequest, Response=ServiceResponse<B>, Error=Error> + 'static,
     S::Future: 'static,
     B: 'static,
 {
@@ -94,13 +94,14 @@ where
             let key = format!("rate_limit:{}", client_ip);
 
             // Increment the request count for this IP
-            let request_count: u32 = match conn.incr(&key, 1).await {
-                Ok(count) => count,
-                Err(e) => {
-                    log::error!("Failed to increment request count in Redis: {:?}", e);
-                    return Err(actix_web::error::ErrorInternalServerError("Redis increment error"));
-                }
-            };
+            let request_count: u32 =
+                match conn.incr(&key, 1).await {
+                    Ok(count) => count,
+                    Err(e) => {
+                        log::error!("Failed to increment request count in Redis: {:?}", e);
+                        return Err(actix_web::error::ErrorInternalServerError("Redis increment error"));
+                    }
+                };
 
             // Set expiration if this is the first request
             if request_count == 1 {
@@ -127,5 +128,4 @@ where
             fut.await.map(|res| res.map_into_left_body())
         })
     }
-
 }

@@ -101,26 +101,16 @@ async fn main() -> std::io::Result<()> {
     // Store Redis client in a web::Data container
     let redis_client_data = Data::new(redis_client.clone());
 
-    // // Wrap Cors in Arc for thread safety
-    // let cors = Arc::new(
-    //     Cors::default()
-    //         .allowed_origin("http://localhost:3000") // Adjust frontend URL
-    //         .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
-    //         .allow_any_header()
-    //         .supports_credentials()
-    //         .max_age(3600),
-    // );
-
     // Set up the Actix server
     HttpServer::new(
         move || {
             let cors =
                 Cors::default()
-                    .allow_any_origin()
-                    // .allowed_origin("http://localhost:3000") // Adjust frontend URL
+                    // .allow_any_origin()
+                    .allowed_origin("http://localhost:3000") // Adjust frontend URL
                     .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
                     .allow_any_header()
-                    .supports_credentials()
+                    .supports_credentials() // for now keep this commented out until I add more auth
                     .max_age(3600);
 
 
@@ -129,7 +119,7 @@ async fn main() -> std::io::Result<()> {
                 .wrap(cors) // No need for Arc, create a new instance of Cors
                 .app_data(pool.clone()) // Pass the PostgreSQL connection pool to handlers
                 .app_data(redis_client_data.clone()) // Pass the Redis client to handlers
-                .wrap(RateLimiter::new(redis_client_data.clone(), 10, 60)) // Rate limiter
+                .wrap(RateLimiter::new(redis_client_data.clone(), 300, 60)) // Rate limiter
                 .service(health_check)
                 .service(test_handler)
                 .service(create_post)
