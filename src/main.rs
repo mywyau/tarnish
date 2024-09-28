@@ -142,6 +142,7 @@ async fn main() -> std::io::Result<()> {
                 .service(delete_skill)
                 .service(get_all_skills)
                 .service(create_user)
+
                 .service(login)
                 .service(logout)
                 .service(get_user_role)

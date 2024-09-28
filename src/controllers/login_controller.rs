@@ -91,10 +91,11 @@ async fn check_user_session(
     redis_client: web::Data<redis::Client>,
     session_id: &str,
 ) -> Result<SessionData, HttpResponse> {
-    let mut redis_conn = redis_client
-        .get_async_connection()
-        .await
-        .map_err(|_| HttpResponse::InternalServerError().body("Failed to connect to Redis"))?;
+    let mut redis_conn =
+        redis_client
+            .get_multiplexed_async_connection()
+            .await
+            .map_err(|_| HttpResponse::InternalServerError().body("Failed to connect to Redis"))?;
 
     let session_key = format!("session:{}", session_id);
     let session_json: Option<String> = redis_conn.get(session_key).await.map_err(|_| {
@@ -110,10 +111,6 @@ async fn check_user_session(
     }
 }
 
-use actix_web::error::InternalError;
-use actix_web::{App, HttpServer};
-use dotenv::dotenv;
-use std::env;
 use crate::connectors::postgres_connector::DbPool;
 use crate::models::LoginRequest::LoginRequest;
 use crate::models::LogoutResponse::LogoutResponse;
@@ -121,25 +118,29 @@ use crate::models::SessionData::SessionData;
 use crate::schemas::user_schema::users::dsl::users;
 use crate::schemas::user_schema::users::{user_id, username};
 use crate::table_models::users::Users;
+use actix_web::error::InternalError;
+use actix_web::{App, HttpServer};
+use dotenv::dotenv;
+use std::env;
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    dotenv().ok();
-
-    let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
-
-    let redis_url = env::var("REDIS_URL").expect("REDIS_URL must be set");
-    let redis_client = redis::Client::open(redis_url).expect("Invalid Redis URL");
-
-    HttpServer::new(move || {
-        App::new()
-            .data(redis_client.clone()) // Add Redis client
-        // Add routes here
-    })
-        .bind(format!("0.0.0.0:{}", port))?
-        .run()
-        .await
-}
+// #[actix_web::main]
+// async fn main() -> std::io::Result<()> {
+//     dotenv().ok();
+//
+//     let port = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+//
+//     let redis_url = env::var("REDIS_URL").expect("REDIS_URL must be set");
+//     let redis_client = redis::Client::open(redis_url).expect("Invalid Redis URL");
+//
+//     HttpServer::new(move || {
+//         App::new()
+//             .data(redis_client.clone()) // Add Redis client
+//         // Add routes here
+//     })
+//         .bind(format!("0.0.0.0:{}", port))?
+//         .run()
+//         .await
+// }
 
 #[post("/logout")]
 async fn logout(
@@ -170,45 +171,49 @@ async fn logout(
 
     // Fetch session data from Redis
     let session_key = format!("session:{}", session_id);
-    let session_data: Option<String> = redis_conn
-        .get(&session_key)
-        .await
-        .map_err(|err| {
-            log::error!("Failed to fetch session data from Redis: {:?}", err);
+    let session_data: Option<String> =
+        redis_conn
+            .get(&session_key)
+            .await
+            .map_err(|err| {
+                log::error!("Failed to fetch session data from Redis: {:?}", err);
+                InternalError::from_response(
+                    "Failed to fetch session data",
+                    HttpResponse::InternalServerError().finish(),
+                )
+            })?;
+
+    // If no session data is found, return an error
+    let session_data =
+        match session_data {
+            Some(data) => data,
+            None => {
+                log::warn!("Session not found or expired for session ID: {}", session_id);
+                return Ok(HttpResponse::Unauthorized().body("Session expired or not found"));
+            }
+        };
+
+    // Parse session data to extract the user ID
+    let session_json: serde_json::Value =
+        serde_json::from_str(&session_data).map_err(|err| {
+            log::error!("Failed to parse session data: {:?}", err);
             InternalError::from_response(
-                "Failed to fetch session data",
+                "Failed to parse session data",
                 HttpResponse::InternalServerError().finish(),
             )
         })?;
 
-    // If no session data is found, return an error
-    let session_data = match session_data {
-        Some(data) => data,
-        None => {
-            log::warn!("Session not found or expired for session ID: {}", session_id);
-            return Ok(HttpResponse::Unauthorized().body("Session expired or not found"));
-        }
-    };
-
-    // Parse session data to extract the user ID
-    let session_json: serde_json::Value = serde_json::from_str(&session_data).map_err(|err| {
-        log::error!("Failed to parse session data: {:?}", err);
-        InternalError::from_response(
-            "Failed to parse session data",
-            HttpResponse::InternalServerError().finish(),
-        )
-    })?;
-
     // Extract and clone the user_id as an owned String
-    let user_id_from_redis_cache = session_json["user_id"]
-        .as_str()
-        .ok_or_else(|| {
-            InternalError::from_response(
-                "user_id not found in session data",
-                HttpResponse::InternalServerError().finish(),
-            )
-        })?
-        .to_string(); // Clone to get an owned String
+    let user_id_from_redis_cache =
+        session_json["user_id"]
+            .as_str()
+            .ok_or_else(|| {
+                InternalError::from_response(
+                    "user_id not found in session data",
+                    HttpResponse::InternalServerError().finish(),
+                )
+            })?
+            .to_string(); // Clone to get an owned String
 
     // Fetch user info from the database based on user_id
     let mut conn = pool.get().map_err(|_| {
