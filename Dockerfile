@@ -1,32 +1,38 @@
-# Use the official Rust image as the base
-FROM rust:latest
+# Stage 1: Build the Rust application using musl for static linking
+FROM rust:latest AS builder
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy all other files to the container
-COPY . .
+# Install dependencies required for PostgreSQL and musl target
+RUN apt-get update && apt-get install -y libpq-dev musl-tools
 
-# Copy the Cargo.toml and Cargo.lock to the working directory
+# Add the musl target for static linking
+RUN rustup target add x86_64-unknown-linux-musl
+
+# Copy only Cargo.toml and Cargo.lock first to leverage caching of dependencies
 COPY Cargo.toml Cargo.lock ./
 
-# Ensure the environment file is in place
-COPY .env.github-actions .env
+# Fetch dependencies (will be cached unless Cargo.toml or Cargo.lock changes)
+RUN cargo fetch
 
-# Debug: Check the contents of the .env file
-RUN echo "Contents of .env:" && cat .env
+# Copy the rest of the source code
+COPY . .
 
-# Build the project in release mode
-RUN cargo build --release
+# Build the Rust project in release mode with musl target for static linking
+RUN cargo build --release --target x86_64-unknown-linux-musl
 
-# Install the compiled binary
-RUN cargo install --path .
+# Stage 2: Create a lightweight image using 'scratch' for a statically linked binary
+FROM scratch
 
-# Verify that the binary exists (this is for debugging purposes)
-RUN ls /usr/local/cargo/bin
+# Set up a non-root user for security (optional, can be removed in 'scratch')
+USER 1000
 
-# Expose the port that the application will run on
+# Copy the statically compiled binary from the build stage
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/tarnish /usr/local/bin/tarnish
+
+# Expose the port your Rust app is running on
 EXPOSE 8080
 
-# Run the installed binary using the project name
-CMD ["tarnish"]
+# Run the binary
+CMD ["/usr/local/bin/tarnish"]

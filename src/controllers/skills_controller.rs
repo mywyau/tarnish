@@ -1,11 +1,11 @@
+use crate::schemas::skills_schema::skills;
+use crate::table_models::skills_models::{NewSkill, Skill};
 use actix_web::{delete, get, post, put, web, Error, HttpResponse};
 use chrono::DateTime;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use crate::schemas::skills_schema::skills;
-use crate::table_models::skills_models::{NewSkill, Skill};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[derive(Serialize, Deserialize)]
@@ -256,11 +256,10 @@ async fn delete_all_skills(
 
 #[cfg(test)]
 mod skills_controller_spec {
-    // use tarnish::connectors::postgres_connector::DbPool;
-    // use tarnish::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};
-    // use tarnish::schemas::skills_schema::skills;
-    // use tarnish::{NewSkill, Skill};
-
+    use crate::connectors::postgres_connector::DbPool;
+    use crate::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};
+    use crate::schemas::skills_schema::skills;
+    use crate::table_models::skills_models::{NewSkill, Skill};
     use actix_web::{body::to_bytes, http::StatusCode, test, web, App};
     use bytes::Bytes;
     use diesel::r2d2::{ConnectionManager, PooledConnection};
@@ -268,12 +267,7 @@ mod skills_controller_spec {
     use dotenv::dotenv;
     use serde_json::{json, Value};
     use std::env;
-    // use tarnish::controllers::skills_controller::{delete_all_skills, get_all_skills, get_by_skill_id};
-    // use tarnish::{create_skill, delete_skill, skills, update_skill, DbPool, NewSkill, Skill};
-    use crate::connectors::postgres_connector::DbPool;
-    use crate::controllers::skills_controller::{create_skill, delete_all_skills, delete_skill, get_all_skills, get_by_skill_id, update_skill};
-    use crate::schemas::skills_schema::skills;
-    use crate::table_models::skills_models::{NewSkill, Skill};
+    use diesel::prelude::*;
 
     #[ctor::ctor]
     fn init() {
@@ -678,20 +672,23 @@ mod skills_controller_spec {
         let mut conn: PooledConnection<ConnectionManager<PgConnection>> =
             pool.get().expect("Failed to get connection from pool");
 
-        let deleted_skill_1 = skills::table
-            .filter(skills::skill_id.eq("fake_id_1"))
-            .first::<Skill>(&mut conn)
-            .optional()
-            .expect("Failed to check for deleted skill");
+        let deleted_skill_1 =
+            skills::table
+                .filter(skills::skill_id.eq("fake_id_1"))
+                .first::<Skill>(&mut conn)
+                .optional()
+                .expect("Failed to check for deleted skill");
 
         assert!(deleted_skill_1.is_none());
 
-        let deleted_skill_2 = skills::table
-            .filter(skills::skill_id.eq("fake_id_2"))
-            .first::<Skill>(&mut conn)
-            .optional()
-            .expect("Failed to check for deleted skill");
+        let deleted_skill_2 =
+            skills::table
+                .filter(skills::skill_id.eq("fake_id_2"))
+                .first::<Skill>(&mut conn)
+                .optional()
+                .expect("Failed to check for deleted skill");
 
         assert!(deleted_skill_2.is_none());
     }
 }
+

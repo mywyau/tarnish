@@ -48,7 +48,6 @@ impl DbConnector for RealDbConnector {
 }
 
 use mockall::mock;
-use std::sync::Once;
 
 mock! {
     pub DbConnector {}
