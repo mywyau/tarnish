@@ -1,0 +1,12 @@
+# Ignore the target directory (Rust build output)
+target/
+
+# Ignore Git files
+.git/
+.gitignore
+
+# Ignore other unnecessary files
+node_modules/
+tmp/
+*.log
+.env
